@@ -80,15 +80,27 @@
 
     <!-- 정답 입력 모달 팝업 -->
     <div id="input-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
-        <div class="bg-slate-800 border border-amber-400 w-full rounded-2xl p-5 space-y-4">
+        <div class="bg-slate-800 border border-amber-400 w-full rounded-2xl p-5 space-y-4 max-h-[95vh] overflow-y-auto">
             <div class="flex justify-between items-center">
                 <span class="bg-amber-400 text-slate-950 text-xs font-black px-2.5 py-0.5 rounded-full" id="modal-qnum-tag">QUESTION --</span>
-                <span class="text-slate-400 text-xs">단답형 정답 입력</span>
+                <div class="flex gap-1">
+                    <span id="modal-team-cat" class="bg-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-md text-white">카테고리</span>
+                    <span id="modal-team-diff" class="bg-purple-600 text-[10px] font-bold px-2 py-0.5 rounded-md text-white">난이도</span>
+                </div>
             </div>
+            
             <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 text-center">
-                <p class="text-xs text-slate-400 mb-1">지금 풀어야 하는 빙고 번호</p>
-                <p class="text-3xl font-black text-yellow-400" id="modal-target-num">--</p>
+                <p class="text-xs text-slate-400 mb-0.5">선택된 빙고 번호</p>
+                <p class="text-2xl font-black text-yellow-400" id="modal-target-num">--</p>
             </div>
+
+            <!-- 💥 [핵심 추가] 내 스마트폰 화면에서도 실시간 문제가 동일하게 출력됨 -->
+            <div class="bg-slate-950 rounded-xl p-4 border border-slate-700 min-h-[80px] flex items-center justify-center">
+                <p id="modal-team-question-body" class="text-sm md:text-base font-bold text-center text-slate-100 whitespace-pre-line leading-relaxed break-keep">
+                    문제를 불러오는 중입니다...
+                </p>
+            </div>
+
             <div class="space-y-1.5">
                 <label class="text-xs font-bold text-slate-300">정답 작성:</label>
                 <input type="text" id="team-answer-input" placeholder="정답을 정확히 입력하세요" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white text-base focus:outline-none focus:border-blue-500 text-center font-bold">
@@ -121,17 +133,16 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // 모바일 사운드 객체 바인딩
-        const sfxTouch = new Audio("https://assets.mixkit.co/active_storage/sfx/2571/2571-84.wav"); // 칩 조작음
-        const sfxSubmit = new Audio("https://assets.mixkit.co/active_storage/sfx/2902/2902-84.wav"); // 정답 제출 (슈욱)
-        const sfxWinCell = new Audio("https://assets.mixkit.co/active_storage/sfx/2019/2019-84.wav"); // 점령 성공 (블링)
+        const sfxTouch = new Audio("https://assets.mixkit.co/active_storage/sfx/2571/2571-84.wav"); 
+        const sfxSubmit = new Audio("https://assets.mixkit.co/active_storage/sfx/2902/2902-84.wav"); 
+        const sfxWinCell = new Audio("https://assets.mixkit.co/active_storage/sfx/2019/2019-84.wav"); 
 
         let myTeamId = null;
         let selectedChipNum = null;
         let localBingoArray = new Array(25).fill(null);
         let actualDBBingoArray = [];
         let globalCurrentQuestionNum = 0;
-        let previousOccupiedCount = 0; // 실시간 점령 추가 알림용 스냅샷 렌더러
+        let previousOccupiedCount = 0; 
 
         window.selectTeam = function(teamId) {
             myTeamId = teamId;
@@ -178,7 +189,7 @@
                 chip.innerText = i;
                 chip.onclick = () => {
                     sfxTouch.currentTime = 0;
-                    sfxTouch.play().catch(e => {}); // 터치음 가동
+                    sfxTouch.play().catch(e => {}); 
                     document.querySelectorAll('.number-chip').forEach(c => c.classList.remove('cell-selected'));
                     chip.classList.add('cell-selected');
                     selectedChipNum = i;
@@ -190,7 +201,7 @@
 
         function placeNumberInCell(index, cellElement) {
             sfxTouch.currentTime = 0;
-            sfxTouch.play().catch(e => {}); // 터치음 가동
+            sfxTouch.play().catch(e => {}); 
             
             if(selectedChipNum !== null) {
                 localBingoArray[index] = selectedChipNum;
@@ -249,11 +260,18 @@
                 const gameStatus = snapshot.val() || {};
                 const currentQuestion = gameStatus.currentQuestion || 0;
                 const status = gameStatus.status || 'waiting';
+                
+                // 💥 [핵심 변경] Firebase에서 넘겨주는 퀴즈 메타데이터 확보
+                const questionText = gameStatus.currentQuestionText || "질문을 불러오는 중...";
+                const category = gameStatus.currentCategory || "일반";
+                const difficulty = gameStatus.currentDifficulty || "중";
 
                 globalCurrentQuestionNum = currentQuestion;
 
                 if (currentQuestion > 0 && (status === 'playing' || status === 'showing_answers')) {
-                    if(actualDBBingoArray.includes(currentQuestion)) openInputModal(currentQuestion, status);
+                    if(actualDBBingoArray.includes(currentQuestion)) {
+                        openInputModal(currentQuestion, status, questionText, category, difficulty);
+                    }
                 } else {
                     closeInputModal();
                 }
@@ -275,7 +293,6 @@
                     }
                 });
 
-                // 실시간 정답 인정을 받아서 불빛 개수가 늘어난 경우 축하 효과음 발송
                 if (currentTrueCount > previousOccupiedCount && previousOccupiedCount > 0) {
                     sfxWinCell.play().catch(e => {});
                 }
@@ -296,9 +313,14 @@
             document.getElementById('play-bingo-count').innerText = `${bingo} Bingo`;
         }
 
-        function openInputModal(qNum, status) {
+        // 💥 [핵심 변경] 모달 열릴 때 문제 텍스트 및 정보들을 함께 받아서 UI에 삽입
+        function openInputModal(qNum, status, questionText, category, difficulty) {
             document.getElementById('modal-qnum-tag').innerText = `QUESTION ${String(qNum).padStart(2, '0')}`;
             document.getElementById('modal-target-num').innerText = `${qNum}번`;
+            
+            document.getElementById('modal-team-cat').innerText = category;
+            document.getElementById('modal-team-diff').innerText = `난이도: ${difficulty}`;
+            document.getElementById('modal-team-question-body').innerText = questionText;
             
             const inputField = document.getElementById('team-answer-input');
             const submitBtn = document.getElementById('btn-send-answer');
@@ -340,7 +362,7 @@
             if(!confirm(`'${ansText}'으로 제출하시겠습니까?`)) return;
 
             set(ref(db, `teams/${myTeamId}/answers/${globalCurrentQuestionNum}`), ansText).then(() => {
-                sfxSubmit.play().catch(e => {}); // 발송 성공 사운드 출력
+                sfxSubmit.play().catch(e => {}); 
                 document.getElementById('team-answer-input').disabled = true;
                 const submitBtn = document.getElementById('btn-send-answer');
                 submitBtn.disabled = true;
