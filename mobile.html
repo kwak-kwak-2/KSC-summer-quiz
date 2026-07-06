@@ -108,7 +108,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, update, onValue, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 연동 확인 완료된 실시간 연동 코드 반영
         const firebaseConfig = {
             apiKey: "AIzaSyAOkTBmqBRe67qyC6b7fp0K8ONIR6XqdNk",
             authDomain: "ksc2026-summer-quiz.firebaseapp.com",
@@ -122,11 +121,17 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // 모바일 사운드 객체 바인딩
+        const sfxTouch = new Audio("https://assets.mixkit.co/active_storage/sfx/2571/2571-84.wav"); // 칩 조작음
+        const sfxSubmit = new Audio("https://assets.mixkit.co/active_storage/sfx/2902/2902-84.wav"); // 정답 제출 (슈욱)
+        const sfxWinCell = new Audio("https://assets.mixkit.co/active_storage/sfx/2019/2019-84.wav"); // 점령 성공 (블링)
+
         let myTeamId = null;
         let selectedChipNum = null;
         let localBingoArray = new Array(25).fill(null);
         let actualDBBingoArray = [];
         let globalCurrentQuestionNum = 0;
+        let previousOccupiedCount = 0; // 실시간 점령 추가 알림용 스냅샷 렌더러
 
         window.selectTeam = function(teamId) {
             myTeamId = teamId;
@@ -172,6 +177,8 @@
                 chip.className = "number-chip bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold py-1.5 rounded-lg border border-slate-700 transition active:scale-95";
                 chip.innerText = i;
                 chip.onclick = () => {
+                    sfxTouch.currentTime = 0;
+                    sfxTouch.play().catch(e => {}); // 터치음 가동
                     document.querySelectorAll('.number-chip').forEach(c => c.classList.remove('cell-selected'));
                     chip.classList.add('cell-selected');
                     selectedChipNum = i;
@@ -182,6 +189,9 @@
         }
 
         function placeNumberInCell(index, cellElement) {
+            sfxTouch.currentTime = 0;
+            sfxTouch.play().catch(e => {}); // 터치음 가동
+            
             if(selectedChipNum !== null) {
                 localBingoArray[index] = selectedChipNum;
                 cellElement.innerText = selectedChipNum;
@@ -253,13 +263,24 @@
                 const teamData = snapshot.val() || {};
                 const occupied = teamData.occupied_cells || {};
                 
+                let currentTrueCount = 0;
                 actualDBBingoArray.forEach(num => {
                     const cell = document.getElementById(`play-cell-${num}`);
                     if(cell) {
-                        if(occupied[num] === true) cell.className = "occupied-win rounded-xl flex items-center justify-center text-2xl font-black text-white aspect-square";
+                        if(occupied[num] === true) {
+                            cell.className = "occupied-win rounded-xl flex items-center justify-center text-2xl font-black text-white aspect-square";
+                            currentTrueCount++;
+                        }
                         else cell.className = "bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-xl font-black text-slate-300 aspect-square";
                     }
                 });
+
+                // 실시간 정답 인정을 받아서 불빛 개수가 늘어난 경우 축하 효과음 발송
+                if (currentTrueCount > previousOccupiedCount && previousOccupiedCount > 0) {
+                    sfxWinCell.play().catch(e => {});
+                }
+                previousOccupiedCount = currentTrueCount;
+
                 calculatePlayBingo(occupied);
             });
         }
@@ -319,6 +340,7 @@
             if(!confirm(`'${ansText}'으로 제출하시겠습니까?`)) return;
 
             set(ref(db, `teams/${myTeamId}/answers/${globalCurrentQuestionNum}`), ansText).then(() => {
+                sfxSubmit.play().catch(e => {}); // 발송 성공 사운드 출력
                 document.getElementById('team-answer-input').disabled = true;
                 const submitBtn = document.getElementById('btn-send-answer');
                 submitBtn.disabled = true;
