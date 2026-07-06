@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>스마트 골든벨 - 학생용</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: 'Pretendard', system-ui, -apple-system, sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .step-panel { display: none; }
+        .step-panel.active { display: block; }
+        .number-chip { touch-action: manipulation; }
+        .cell-selected {
+            background-color: #3b82f6 !important;
+            border-color: #60a5fa !important;
+            color: white !important;
+        }
+        .occupied-win {
+            background: linear-gradient(135deg, #e11d48, #be123c) !important;
+            color: white !important;
+            font-weight: 900 !important;
+            box-shadow: 0 0 10px rgba(225, 29, 72, 0.5);
+            border-color: transparent !important;
+        }
+    </style>
+</head>
+<body class="p-4 max-w-md mx-auto min-h-screen flex flex-col justify-between">
+
+    <div class="text-center border-b border-slate-800 pb-3 mb-4">
+        <span class="text-xs uppercase tracking-widest text-slate-500 font-bold">공항성산교회 스마트 골든벨</span>
+        <div id="team-title-indicator" class="text-xl font-black text-yellow-400 mt-0.5">조 선택 대기 중</div>
+    </div>
+
+    <!-- STEP 1: 조 선택 -->
+    <div id="step-team-select" class="step-panel active space-y-6 my-auto">
+        <div class="text-center">
+            <h2 class="text-2xl font-black mb-2">반갑습니다! 👋</h2>
+            <p class="text-sm text-slate-400">자신이 속한 조의 버튼을 정확히 클릭하세요.</p>
+        </div>
+        <div class="flex flex-col gap-3">
+            <button onclick="selectTeam(1)" class="w-full py-4 bg-red-600/90 active:bg-red-700 text-lg font-black rounded-2xl shadow transition text-white">1조 대표 접속</button>
+            <button onclick="selectTeam(2)" class="w-full py-4 bg-blue-600/90 active:bg-blue-700 text-lg font-black rounded-2xl shadow transition text-white">2조 대표 접속</button>
+            <button onclick="selectTeam(3)" class="w-full py-4 bg-emerald-600/90 active:bg-emerald-700 text-lg font-black rounded-2xl shadow transition text-white">3조 대표 접속</button>
+            <button onclick="selectTeam(4)" class="w-full py-4 bg-amber-600/90 active:bg-amber-700 text-lg font-black rounded-2xl shadow transition text-white">4조 대표 접속</button>
+            <button onclick="selectTeam(5)" class="w-full py-4 bg-purple-600/90 active:bg-purple-700 text-lg font-black rounded-2xl shadow transition text-white">5조 대표 접속</button>
+        </div>
+    </div>
+
+    <!-- STEP 2: DIY 빙고판 구성 -->
+    <div id="step-bingo-setup" class="step-panel space-y-4">
+        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl text-center text-xs text-slate-400">
+            💡 <strong class="text-blue-400 font-bold">배치 방식:</strong> 아래 숫자 칩을 터치한 후, 위 빈 칸의 원하는 위치를 터치하면 배치됩니다.
+        </div>
+        <div class="grid grid-cols-5 gap-2 aspect-square w-full bg-slate-950 p-2 rounded-2xl border border-slate-800" id="setup-grid"></div>
+        <div>
+            <div class="text-xs font-bold text-slate-400 mb-2">남은 숫자 칩셋 리스트:</div>
+            <div id="chips-container" class="grid grid-cols-7 gap-1.5 bg-slate-900 p-2.5 rounded-xl border border-slate-800 max-h-[140px] overflow-y-auto"></div>
+        </div>
+        <button id="btn-submit-board" disabled onclick="submitBingoBoard()" class="w-full py-3.5 bg-slate-700 text-slate-400 font-black rounded-xl cursor-not-allowed transition text-base">
+            25개 칸을 모두 채우세요
+        </button>
+    </div>
+
+    <!-- STEP 3: 인게임 진행 -->
+    <div id="step-game-play" class="step-panel space-y-4">
+        <div class="p-3 bg-slate-900 border border-slate-800 rounded-xl flex justify-between items-center text-xs">
+            <span class="text-slate-400">상태: <span class="text-emerald-400 font-bold">실시간 동기화 완료</span></span>
+            <span id="play-bingo-count" class="bg-blue-600 text-white font-mono px-2 py-0.5 rounded-full font-bold">0 Bingo</span>
+        </div>
+        <div class="grid grid-cols-5 gap-2 aspect-square w-full bg-slate-950 p-2 rounded-2xl border border-slate-800" id="play-grid"></div>
+        <div class="text-center text-xs text-slate-500 py-2">선생님이 문제를 출제하면 정답 입력창이 자동으로 켜집니다.</div>
+    </div>
+
+    <!-- 정답 입력 모달 팝업 -->
+    <div id="input-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-slate-800 border border-amber-400 w-full rounded-2xl p-5 space-y-4">
+            <div class="flex justify-between items-center">
+                <span class="bg-amber-400 text-slate-950 text-xs font-black px-2.5 py-0.5 rounded-full" id="modal-qnum-tag">QUESTION --</span>
+                <span class="text-slate-400 text-xs">단답형 정답 입력</span>
+            </div>
+            <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 text-center">
+                <p class="text-xs text-slate-400 mb-1">지금 풀어야 하는 빙고 번호</p>
+                <p class="text-3xl font-black text-yellow-400" id="modal-target-num">--</p>
+            </div>
+            <div class="space-y-1.5">
+                <label class="text-xs font-bold text-slate-300">정답 작성:</label>
+                <input type="text" id="team-answer-input" placeholder="정답을 정확히 입력하세요" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white text-base focus:outline-none focus:border-blue-500 text-center font-bold">
+            </div>
+            <div id="submit-status-msg" class="text-xs text-center text-slate-400 h-4"></div>
+            <button id="btn-send-answer" onclick="sendAnswerToFirebase()" class="w-full py-3.5 bg-blue-500 hover:bg-blue-600 text-white font-black rounded-xl text-base transition">
+                정답 제출하기
+            </button>
+        </div>
+    </div>
+
+    <footer class="text-center text-[10px] text-slate-600 mt-4 pt-2 border-t border-slate-900">
+        © 2026 공항성산교회 중등부 스마트 플랫폼 프로젝트
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, update, onValue, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // 연동 확인 완료된 실시간 연동 코드 반영
+        const firebaseConfig = {
+            apiKey: "AIzaSyAOkTBmqBRe67qyC6b7fp0K8ONIR6XqdNk",
+            authDomain: "ksc2026-summer-quiz.firebaseapp.com",
+            databaseURL: "https://ksc2026-summer-quiz-default-rtdb.firebaseio.com",
+            projectId: "ksc2026-summer-quiz",
+            storageBucket: "ksc2026-summer-quiz.firebasestorage.app",
+            messagingSenderId: "683850602432",
+            appId: "1:683850602432:web:4e1614e9f6969e79c81a25"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let myTeamId = null;
+        let selectedChipNum = null;
+        let localBingoArray = new Array(25).fill(null);
+        let actualDBBingoArray = [];
+        let globalCurrentQuestionNum = 0;
+
+        window.selectTeam = function(teamId) {
+            myTeamId = teamId;
+            document.getElementById('team-title-indicator').innerText = `${myTeamId}조 대표 디바이스`;
+            
+            get(ref(db, `teams/${myTeamId}/bingoBoard`)).then((snapshot) => {
+                const existBoard = snapshot.val();
+                if(existBoard && existBoard.length === 25) {
+                    actualDBBingoArray = existBoard;
+                    switchPanel('step-game-play');
+                    initPlayGrid();
+                    startInGameLiveSync();
+                } else {
+                    switchPanel('step-bingo-setup');
+                    initSetupGrid();
+                }
+            });
+        };
+
+        function switchPanel(panelId) {
+            document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(panelId).classList.add('active');
+        }
+
+        function initSetupGrid() {
+            const setupGrid = document.getElementById('setup-grid');
+            setupGrid.innerHTML = '';
+            for(let i=0; i<25; i++) {
+                const cell = document.createElement('button');
+                cell.className = "bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-lg font-black text-slate-600 aspect-square";
+                cell.onclick = () => placeNumberInCell(i, cell);
+                setupGrid.appendChild(cell);
+            }
+            refreshChips();
+        }
+
+        function refreshChips() {
+            const container = document.getElementById('chips-container');
+            container.innerHTML = '';
+            for(let i=1; i<=25; i++) {
+                if(localBingoArray.includes(i)) continue;
+                const chip = document.createElement('button');
+                chip.className = "number-chip bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold py-1.5 rounded-lg border border-slate-700 transition active:scale-95";
+                chip.innerText = i;
+                chip.onclick = () => {
+                    document.querySelectorAll('.number-chip').forEach(c => c.classList.remove('cell-selected'));
+                    chip.classList.add('cell-selected');
+                    selectedChipNum = i;
+                };
+                container.appendChild(chip);
+            }
+            checkSetupComplete();
+        }
+
+        function placeNumberInCell(index, cellElement) {
+            if(selectedChipNum !== null) {
+                localBingoArray[index] = selectedChipNum;
+                cellElement.innerText = selectedChipNum;
+                cellElement.className = "bg-slate-800 border-2 border-blue-500 rounded-xl flex items-center justify-center text-xl font-black text-white aspect-square";
+                selectedChipNum = null;
+                refreshChips();
+            } else {
+                if(localBingoArray[index] !== null) {
+                    localBingoArray[index] = null;
+                    cellElement.innerText = "";
+                    cellElement.className = "bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-lg font-black text-slate-600 aspect-square";
+                    refreshChips();
+                }
+            }
+        }
+
+        function checkSetupComplete() {
+            const btn = document.getElementById('btn-submit-board');
+            const isFull = localBingoArray.every(v => v !== null);
+            if(isFull) {
+                btn.disabled = false;
+                btn.className = "w-full py-3.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-black rounded-xl cursor-pointer transition text-base shadow-lg";
+                btn.innerText = "빙고판 배치 완료 및 전송";
+            } else {
+                btn.disabled = true;
+                btn.className = "w-full py-3.5 bg-slate-700 text-slate-400 font-black rounded-xl cursor-not-allowed transition text-base";
+            }
+        }
+
+        window.submitBingoBoard = function() {
+            if(!confirm("이 구조로 빙고판을 최종 제출할까요?")) return;
+            set(ref(db, `teams/${myTeamId}/bingoBoard`), localBingoArray).then(() => {
+                actualDBBingoArray = [...localBingoArray];
+                switchPanel('step-game-play');
+                initPlayGrid();
+                startInGameLiveSync();
+            });
+        };
+
+        function initPlayGrid() {
+            const playGrid = document.getElementById('play-grid');
+            playGrid.innerHTML = '';
+            for(let i=0; i<25; i++) {
+                const num = actualDBBingoArray[i];
+                const cell = document.createElement('div');
+                cell.id = `play-cell-${num}`;
+                cell.className = "bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-xl font-black text-slate-300 aspect-square";
+                cell.innerText = num;
+                playGrid.appendChild(cell);
+            }
+        }
+
+        function startInGameLiveSync() {
+            onValue(ref(db, 'game'), (snapshot) => {
+                const gameStatus = snapshot.val() || {};
+                const currentQuestion = gameStatus.currentQuestion || 0;
+                const status = gameStatus.status || 'waiting';
+
+                globalCurrentQuestionNum = currentQuestion;
+
+                if (currentQuestion > 0 && (status === 'playing' || status === 'showing_answers')) {
+                    if(actualDBBingoArray.includes(currentQuestion)) openInputModal(currentQuestion, status);
+                } else {
+                    closeInputModal();
+                }
+            });
+
+            onValue(ref(db, `teams/${myTeamId}`), (snapshot) => {
+                const teamData = snapshot.val() || {};
+                const occupied = teamData.occupied_cells || {};
+                
+                actualDBBingoArray.forEach(num => {
+                    const cell = document.getElementById(`play-cell-${num}`);
+                    if(cell) {
+                        if(occupied[num] === true) cell.className = "occupied-win rounded-xl flex items-center justify-center text-2xl font-black text-white aspect-square";
+                        else cell.className = "bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-xl font-black text-slate-300 aspect-square";
+                    }
+                });
+                calculatePlayBingo(occupied);
+            });
+        }
+
+        function calculatePlayBingo(occupied) {
+            let grid = [];
+            for (let i = 0; i < 5; i++) grid.push(actualDBBingoArray.slice(i * 5, i * 5 + 5));
+            let bingo = 0;
+            for(let r=0; r<5; r++) { if(grid[r].every(num => occupied[num] === true)) bingo++; }
+            for(let c=0; c<5; c++) { if([0,1,2,3,4].every(r => occupied[grid[r][c]] === true)) bingo++; }
+            if([0,1,2,3,4].every(i => occupied[grid[i][i]] === true)) bingo++;
+            if([0,1,2,3,4].every(i => occupied[grid[i][4-i]] === true)) bingo++;
+            document.getElementById('play-bingo-count').innerText = `${bingo} Bingo`;
+        }
+
+        function openInputModal(qNum, status) {
+            document.getElementById('modal-qnum-tag').innerText = `QUESTION ${String(qNum).padStart(2, '0')}`;
+            document.getElementById('modal-target-num').innerText = `${qNum}번`;
+            
+            const inputField = document.getElementById('team-answer-input');
+            const submitBtn = document.getElementById('btn-send-answer');
+            const statusMsg = document.getElementById('submit-status-msg');
+
+            document.getElementById('input-modal').classList.remove('hidden');
+
+            if(status === 'showing_answers') {
+                inputField.disabled = true;
+                submitBtn.disabled = true;
+                submitBtn.className = "w-full py-3.5 bg-slate-600 text-slate-400 font-bold rounded-xl text-base cursor-not-allowed";
+                submitBtn.innerText = "선생님이 정답을 확인 중입니다";
+                return;
+            }
+
+            get(ref(db, `teams/${myTeamId}/answers/${qNum}`)).then((snapshot) => {
+                const prevAns = snapshot.val();
+                if(prevAns) {
+                    inputField.value = prevAns;
+                    inputField.disabled = true;
+                    submitBtn.disabled = true;
+                    submitBtn.className = "w-full py-3.5 bg-emerald-600 text-white font-black rounded-xl text-base";
+                    submitBtn.innerText = "제출 완료 (수정 불가)";
+                    statusMsg.innerText = "서버에 안전하게 보관되었습니다.";
+                } else {
+                    inputField.value = "";
+                    inputField.disabled = false;
+                    submitBtn.disabled = false;
+                    submitBtn.className = "w-full py-3.5 bg-blue-500 hover:bg-blue-600 text-white font-black rounded-xl text-base";
+                    submitBtn.innerText = "정답 제출하기";
+                    statusMsg.innerText = "";
+                }
+            });
+        }
+
+        window.sendAnswerToFirebase = function() {
+            const ansText = document.getElementById('team-answer-input').value.trim();
+            if(!ansText) { alert("정답을 입력해 주세요."); return; }
+            if(!confirm(`'${ansText}'으로 제출하시겠습니까?`)) return;
+
+            set(ref(db, `teams/${myTeamId}/answers/${globalCurrentQuestionNum}`), ansText).then(() => {
+                document.getElementById('team-answer-input').disabled = true;
+                const submitBtn = document.getElementById('btn-send-answer');
+                submitBtn.disabled = true;
+                submitBtn.className = "w-full py-3.5 bg-emerald-600 text-white font-black rounded-xl text-base";
+                submitBtn.innerText = "제출 완료 (수정 불가)";
+                document.getElementById('submit-status-msg').innerText = "실시간 전송 완료!";
+            });
+        };
+
+        function closeInputModal() { document.getElementById('input-modal').classList.add('hidden'); }
+    </script>
+</body>
+</html>
