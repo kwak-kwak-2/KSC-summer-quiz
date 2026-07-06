@@ -22,3 +22,39 @@
 ## 📂 프로젝트 구조 (Firebase DB Tree)
 
 데이터베이스는 서버 비용이 전혀 발생하지 않는 **Firebase 무료 요금제(Spark)** 범위 내에서 초경량 텍스트 구조로 실시간 동기화됩니다.
+/game
+├── currentQuestion     : 현재 활성화된 문제 번호 (0: 대기, 1~25)
+├── currentQuestionText : 현재 출제된 퀴즈 본문 텍스트 (실시간 학생 폰 전송용)
+├── currentCategory     : 현재 퀴즈 카테고리
+├── currentDifficulty   : 현재 퀴즈 난이도
+└── status              : 게임 진행 상태 ('waiting', 'playing', 'showing_answers')
+
+/teams
+└── {team_id} (1~5조)
+├── bingoBoard     : 해당 조가 직접 DIY로 배치 완료한 5x5 숫자 배열
+├── answers        : {question_id} 별로 학생들이 타이핑하여 제출한 단답형 정답 텍스트
+└── occupied_cells : {question_id} 해당 번호의 문제 점령 성공 여부 (true/false)
+
+---
+
+---
+
+## 🛠️ 기술 스택 (Tech Stack)
+
+- **Frontend**: HTML5, JavaScript (ES6+ Module)
+- **Styling**: Tailwind CSS (CDN Framework)
+- **Backend**: Google Firebase Realtime Database (v10 SDK)
+- **Hosting**: GitHub Pages (무료 정적 웹 호스팅)
+
+---
+
+## 📋 현장 운영 가이드 (선생님 참고용)
+
+1. **디바이스 오디오 잠금 해제**
+   - 브라우저 보안 정책상 사용자의 첫 클릭이 있어야만 소리가 납니다. 수련회장 노트북에서 `index.html`을 실행한 뒤, **화면 빈 곳을 마우스로 아무 데나 한 번 클릭**해 주세요.
+2. **빔프로젝터 세팅**
+   - 주소창이나 탭이 나오면 몰입도가 깨지므로 노트북에서 브라우저를 띄운 뒤 **`F11` 키를 눌러 전체 화면 모드**로 가동하는 것을 권장합니다.
+3. **게임 시작 직전 리셋**
+   - 수련회 출발 전이나 전날 테스트한 데이터가 DB에 남아있을 수 있습니다. 게임 직전 마스터 화면 상단의 **[게임 전체 초기화]** 버튼을 눌러 깔끔하게 포맷한 후 조별 빙고판 빌드를 시작하세요.
+4. **학생 접속 편의성**
+   - 학생들이 긴 주소를 치고 들어오기 매우 힘듭니다. `mobile.html` 주소를 **QR코드로 변환**하여 PPT 화면에 띄우거나 조별 책상에 부착해 주시면 카메라 스캔으로 1초 만에 접속할 수 있습니다.
