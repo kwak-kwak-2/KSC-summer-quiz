@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -126,7 +125,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, update, onValue, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 연동 확인 완료된 실시간 연동 코드 반영
         const firebaseConfig = {
             apiKey: "AIzaSyAOkTBmqBRe67qyC6b7fp0K8ONIR6XqdNk",
             authDomain: "ksc2026-summer-quiz.firebaseapp.com",
@@ -139,6 +137,17 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+
+        // 오디오 이펙트 객체 생성
+        const sfxOpen = new Audio("https://assets.mixkit.co/active_storage/sfx/2013/2013-84.wav"); // 퀴즈 오픈 (짜잔)
+        const sfxTick = new Audio("https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav"); // 일반 초침 (똑딱)
+        const sfxWarning = new Audio("https://assets.mixkit.co/active_storage/sfx/951/951-84.wav"); // 5초 이하 경고음
+        const sfxTimeOver = new Audio("https://assets.mixkit.co/active_storage/sfx/1013/1013-84.wav"); // 타임아웃 부저
+        const sfxBingo = new Audio("https://assets.mixkit.co/active_storage/sfx/1435/1435-84.wav"); // 빙고 획득 축하 (채점 반영시 활용)
+
+        // 볼륨 최적화 조절
+        sfxTick.volume = 0.4;
+        sfxWarning.volume = 0.6;
 
         const quizBank = {
             1: { cat: "사고력", diff: "최상", time: 180, q: "[수열 문제] 아래 빈칸에 알맞은 숫자는 무엇일까요?\n\n1, 2, 3, 5, 8, 13, (?)", ans: "21" },
@@ -240,7 +249,7 @@
                 }
 
                 if (currentActiveQId > 0) {
-                    const ansDisplay = document.getElementById(`live-ans-${t}`);
+                    const ansDisplay = document.getElementById('live-ans-' + t);
                     if (ansDisplay) {
                         const submittedText = answers[currentActiveQId];
                         const txtSpan = ansDisplay.querySelector('.ans-text');
@@ -300,6 +309,9 @@
             currentActiveQId = qId;
             const qData = quizBank[qId];
 
+            // 퀴즈 오픈 사운드 가동
+            sfxOpen.play().catch(e => console.log("Audio play blocked"));
+
             document.getElementById('modal-qnum').innerText = `QUESTION ${String(qId).padStart(2, '0')}`;
             document.getElementById('modal-category').innerText = qData.cat;
             document.getElementById('modal-difficulty').innerText = `난이도: ${qData.diff}`;
@@ -341,9 +353,20 @@
                 if(isTimerRunning) {
                     timeLeft--;
                     updateTimerUI();
+
+                    // 실시간 타이머 사운드 효과 핸들링
+                    if (timeLeft > 5 && timeLeft > 0) {
+                        sfxTick.currentTime = 0;
+                        sfxTick.play().catch(e => {});
+                    } else if (timeLeft <= 5 && timeLeft > 0) {
+                        sfxWarning.currentTime = 0;
+                        sfxWarning.play().catch(e => {});
+                    }
+
                     if(timeLeft <= 0) {
                         clearInterval(timerInterval);
                         isTimerRunning = false;
+                        sfxTimeOver.play().catch(e => {}); // 타임아웃 부저 가동
                         revealAnswers();
                     }
                 }
@@ -389,10 +412,19 @@
 
         window.submitScoring = function() {
             let updates = {};
+            let checkCount = 0;
             document.querySelectorAll('#scoring-zone input[type="checkbox"]').forEach(cb => {
                 const teamId = cb.value;
-                if(cb.checked) updates[`/teams/${teamId}/occupied_cells/${currentActiveQId}`] = true;
+                if(cb.checked) {
+                    updates[`/teams/${teamId}/occupied_cells/${currentActiveQId}`] = true;
+                    checkCount++;
+                }
             });
+
+            // 정답 처리자가 있을 시 성공 축하 팡파레 효과음 가동
+            if(checkCount > 0) {
+                sfxBingo.play().catch(e => {});
+            }
 
             update(ref(db), updates).then(() => closeQuizModal(true));
         };
