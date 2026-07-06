@@ -97,9 +97,7 @@
                 <div id="live-answers-grid" class="grid grid-cols-5 gap-2"></div>
             </div>
 
-            <div id="sample-answer-box" class="mb-6 p-3 bg-emerald-950/40 border border-emerald-800 rounded-lg hidden">
-                <p class="text-sm text-emerald-400"><strong class="font-bold">[출제 참고 정답]:</strong> <span id="modal-sample-ans"></span></p>
-            </div>
+            <!-- 대중 노출을 막기 위해 정답 확인 박스는 완벽히 삭제처리하여 주석으로만 남겨두었습니다 -->
 
             <div class="border-t border-slate-700 pt-4 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex flex-wrap gap-4 items-center" id="scoring-zone">
@@ -138,24 +136,22 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // 오디오 이펙트 객체 생성
-        const sfxOpen = new Audio("https://assets.mixkit.co/active_storage/sfx/2013/2013-84.wav"); // 퀴즈 오픈 (짜잔)
-        const sfxTick = new Audio("https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav"); // 일반 초침 (똑딱)
-        const sfxWarning = new Audio("https://assets.mixkit.co/active_storage/sfx/951/951-84.wav"); // 5초 이하 경고음
-        const sfxTimeOver = new Audio("https://assets.mixkit.co/active_storage/sfx/1013/1013-84.wav"); // 타임아웃 부저
-        const sfxBingo = new Audio("https://assets.mixkit.co/active_storage/sfx/1435/1435-84.wav"); // 빙고 획득 축하 (채점 반영시 활용)
+        const sfxOpen = new Audio("https://assets.mixkit.co/active_storage/sfx/2013/2013-84.wav"); 
+        const sfxTick = new Audio("https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav"); 
+        const sfxWarning = new Audio("https://assets.mixkit.co/active_storage/sfx/951/951-84.wav"); 
+        const sfxTimeOver = new Audio("https://assets.mixkit.co/active_storage/sfx/1013/1013-84.wav"); 
+        const sfxBingo = new Audio("https://assets.mixkit.co/active_storage/sfx/1435/1435-84.wav"); 
 
-        // 볼륨 최적화 조절
         sfxTick.volume = 0.4;
         sfxWarning.volume = 0.6;
 
         const quizBank = {
             1: { cat: "사고력", diff: "최상", time: 180, q: "[수열 문제] 아래 빈칸에 알맞은 숫자는 무엇일까요?\n\n1, 2, 3, 5, 8, 13, (?)", ans: "21" },
             2: { cat: "논리추리", diff: "최상", time: 180, q: "3명의 용의자 A, B, C가 있다. 한 명만 진짜 범인이고 한 명만 진실을 말하고 있다. 범인은 누구인가?\n- A: 'C가 범인입니다.'\n- B: '저는 범인이 아닙니다.'\n- C: 'A는 거짓말을 하고 있어요.'", ans: "B" },
-            3: { cat: "CCM초성", diff: "상", time: 120, q: "다음 초성이 가리키는 대세 CCM의 제목은 무엇일까요?\n\n[ ㅇㄱㄴ ㅎㄴㄹ ]", ans: "원하고 바라고 기도합니다 (또는 은혜 등 상황에 맞춰 채점)" },
+            3: { cat: "CCM초성", diff: "상", time: 120, q: "다음 초성이 가리키는 대세 CCM의 제목은 무엇일까요?\n\n[ ㅇㄱㄴ ㅎㄴㄹ ]", ans: "원하고 바라고 기도합니다" },
             4: { cat: "드라마", diff: "상", time: 120, q: "드라마 '눈물의 여왕' 백현우의 레전드 취중 대사 괄호 채우기:\n'나 취하면 진짜 ( ? ) 고 귀여워서 안 된다고... 근데 왜 귀엽고 난리냐...'", ans: "말을 잘 안 듣" },
             5: { cat: "성경연산", diff: "상", time: 120, q: "다음 연산의 최종 값을 구하시오.\n\n[ 구약 성경 총 권수(39) ]  x  [ 신약 성경 총 권수(27) ]", ans: "1053" },
-            6: { cat: "교회상식", diff: "중", time: 60, q: "우리 공항성산교회 중등부의 이번 2026년도 여름수련회 공식 전체 주제 타이틀은 무엇일까요?", ans: "수련회 대주제" },
+            6: { cat: "교회상식", diff: "중", time: 60, q: "우리 공항성산교회 중등부의 이번 2026년도 여름수련회 공식 전체 주제 타이틀은 무엇일까요?", ans: "주제명" },
             7: { cat: "성경인물", diff: "중", time: 60, q: "성경 인물 중 가장 장수했던 인물로, 총 969세를 살았던 이 사람의 이름은 무엇일까요?", ans: "므두셀라" },
             8: { cat: "일반상식", diff: "중", time: 60, q: "대한민국 50,000원권 화폐에 그려져 있는 역사의 핵심 인물은 누구일까요?", ans: "신사임당" },
             9: { cat: "역사상식", diff: "중", time: 60, q: "조선 시대 세종대왕 시절 강우량을 측정하기 위해 세계 최초로 발명된 기구의 이름은 무엇일까요?", ans: "측우기" },
@@ -165,14 +161,14 @@
             13: { cat: "일반상식", diff: "중", time: 60, q: "지구에서 가장 넓은 면적을 가진 대양의 명칭은 무엇일까요?", ans: "태평양" },
             14: { cat: "성경인물", diff: "중", time: 60, q: "예수님의 열두 제자 중, 예수님을 은 30에 대제사장들에게 팔아넘긴 제자의 이름은?", ans: "가룟 유다" },
             15: { cat: "넌센스", diff: "중", time: 60, q: "세상에서 가장 무서운 전화기는 무엇일까요?", ans: "무선전화기" },
-            16: { cat: "팀미션", diff: "하", time: 30, q: "[즉석 미션] 조원 전체가 중앙으로 손을 모으고 힘차게 '조 구호'를 목소리 맞춰 외치세요!", ans: "성공 시 인정" },
-            17: { cat: "팀미션", diff: "하", time: 30, q: "[조장 미션] 조장이 일어나서 자기 조원들의 전체 이름을 성 떼고 안 틀리고 연속으로 5초 안에 부르기!", ans: "성공 시 인정" },
-            18: { cat: "팀미션", diff: "하", time: 30, q: "[몸으로 말해요] 조원 한 명이 몸으로만 '우리 교회 담임 목사님'을 묘사하여 조원들이 맞추기!", ans: "성공 시 인정" },
-            19: { cat: "팀미션", diff: "하", time: 30, q: "[TMI 미션] 담당 선생님과 조원 전체가 카메라를 보며 단체로 '쌍하트 포즈'를 취하고 사진 찍기!", ans: "인증샷 확인 시 인정" },
-            20: { cat: "팀미션", diff: "하", time: 30, q: "[스피드] 조원 중 한 명이 제자리멀리뛰기를 뛰어 도합 2미터 30센티미터를 넘기시오.", ans: "측정 완료 시 인정" },
+            16: { cat: "팀미션", diff: "하", time: 30, q: "[즉석 미션] 조원 전체가 중앙으로 손을 모으고 힘차게 '조 구호'를 목소리 맞춰 외치세요!", ans: "성공 미션" },
+            17: { cat: "팀미션", diff: "하", time: 30, q: "[조장 미션] 조장이 일어나서 자기 조원들의 전체 이름을 성 떼고 안 틀리고 연속으로 5초 안에 부르기!", ans: "성공 미션" },
+            18: { cat: "팀미션", diff: "하", time: 30, q: "[몸으로 말해요] 조원 한 명이 몸으로만 '우리 교회 담임 목사님'을 묘사하여 조원들이 맞추기!", ans: "성공 미션" },
+            19: { cat: "팀미션", diff: "하", time: 30, q: "[TMI 미션] 담당 선생님과 조원 전체가 카메라를 보며 단체로 '쌍하트 포즈'를 취하고 사진 찍기!", ans: "성공 미션" },
+            20: { cat: "팀미션", diff: "하", time: 30, q: "[스피드] 조원 중 한 명이 제자리멀리뛰기를 뛰어 도합 2미터 30센티미터를 넘기시오.", ans: "성공 미션" },
             21: { cat: "성경퀴즈", diff: "하", time: 30, q: "성경의 맨 마지막 권의 이름은 무엇일까요?", ans: "요한계시록" },
             22: { cat: "성경퀴즈", diff: "하", time: 30, q: "예수님이 태어나신 유대 지역의 작은 마을 이름은 어디일까요?", ans: "베들레헴" },
-            23: { cat: "교회TMI", diff: "하", time: 30, q: "우리 중등부 부장 선생님의 존함(이름)은 무엇일까요?", ans: "부장선생님 성함" },
+            23: { cat: "교회TMI", diff: "하", time: 30, q: "우리 중등부 부장 선생님의 존함(이름)은 무엇일까요?", ans: "부장선생님 이름" },
             24: { cat: "넌센스", diff: "하", time: 30, q: "왕이 넘어지면 세 글자로 무엇이라고 할까요?", ans: "킹콩" },
             25: { cat: "일반상식", diff: "하", time: 30, q: "대한민국의 상징인 국화(나라의 꽃)의 이름은 무엇일까요?", ans: "무궁화" }
         };
@@ -309,15 +305,12 @@
             currentActiveQId = qId;
             const qData = quizBank[qId];
 
-            // 퀴즈 오픈 사운드 가동
             sfxOpen.play().catch(e => console.log("Audio play blocked"));
 
             document.getElementById('modal-qnum').innerText = `QUESTION ${String(qId).padStart(2, '0')}`;
             document.getElementById('modal-category').innerText = qData.cat;
             document.getElementById('modal-difficulty').innerText = `난이도: ${qData.diff}`;
             document.getElementById('modal-content').innerText = qData.q;
-            document.getElementById('modal-sample-ans').innerText = qData.ans;
-            document.getElementById('sample-answer-box').classList.remove('hidden');
 
             const liveAnsGrid = document.getElementById('live-answers-grid');
             liveAnsGrid.innerHTML = '';
@@ -340,7 +333,14 @@
 
             document.getElementById('quiz-modal').classList.remove('hidden');
 
-            update(ref(db, 'game'), { currentQuestion: qId, status: 'playing' });
+            // 💥 [핵심 변경] 학생 화면에도 퀴즈 텍스트와 카테고리를 함께 연동 송신
+            update(ref(db, 'game'), { 
+                currentQuestion: qId, 
+                status: 'playing',
+                currentQuestionText: qData.q,
+                currentCategory: qData.cat,
+                currentDifficulty: qData.diff
+            });
 
             isTimerRunning = true;
             document.getElementById('btn-timer-toggle').innerText = "일시정지";
@@ -354,7 +354,6 @@
                     timeLeft--;
                     updateTimerUI();
 
-                    // 실시간 타이머 사운드 효과 핸들링
                     if (timeLeft > 5 && timeLeft > 0) {
                         sfxTick.currentTime = 0;
                         sfxTick.play().catch(e => {});
@@ -366,7 +365,7 @@
                     if(timeLeft <= 0) {
                         clearInterval(timerInterval);
                         isTimerRunning = false;
-                        sfxTimeOver.play().catch(e => {}); // 타임아웃 부저 가동
+                        sfxTimeOver.play().catch(e => {}); 
                         revealAnswers();
                     }
                 }
@@ -421,7 +420,6 @@
                 }
             });
 
-            // 정답 처리자가 있을 시 성공 축하 팡파레 효과음 가동
             if(checkCount > 0) {
                 sfxBingo.play().catch(e => {});
             }
@@ -433,7 +431,13 @@
             if(timerInterval) clearInterval(timerInterval);
             document.getElementById('quiz-modal').classList.add('hidden');
             currentActiveQId = 0;
-            update(ref(db, 'game'), { currentQuestion: 0, status: 'waiting' });
+            update(ref(db, 'game'), { 
+                currentQuestion: 0, 
+                status: 'waiting',
+                currentQuestionText: "",
+                currentCategory: "",
+                currentDifficulty: ""
+            });
         };
 
         window.resetGame = function() {
@@ -442,7 +446,13 @@
                 document.getElementById('quiz-modal').classList.add('hidden');
                 
                 const initData = {
-                    game: { currentQuestion: 0, status: 'waiting' },
+                    game: { 
+                        currentQuestion: 0, 
+                        status: 'waiting',
+                        currentQuestionText: "",
+                        currentCategory: "",
+                        currentDifficulty: ""
+                    },
                     teams: {
                         1: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false} },
                         2: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false} },
