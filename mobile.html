@@ -101,7 +101,7 @@
             </div>
 
             <div id="mobile-real-answer-zone" class="hidden bg-gradient-to-r from-orange-600/40 to-amber-600/40 border border-orange-400 rounded-xl p-3.5 text-center transition-all">
-                <p class="text-xs font-black text-orange-400 uppercase tracking-widest mb-1">📢 목사님 공인 실제 정답</p>
+                <p class="text-xs font-black text-orange-400 uppercase tracking-widest mb-1">🎯 퀴즈 실제 정답</p>
                 <p id="mobile-real-answer-text" class="text-xl font-black text-yellow-300 tracking-wide"></p>
             </div>
 
@@ -264,11 +264,10 @@
                 const questionText = gameStatus.currentQuestionText || "질문을 불러오는 중...";
                 const category = gameStatus.currentCategory || "일반";
                 const difficulty = gameStatus.currentDifficulty || "중";
-                const serverRealAnswer = gameStatus.currentRealAnswer || ""; // 마스터측 송신 정답 캐시
+                const serverRealAnswer = gameStatus.currentRealAnswer || "";
 
                 globalCurrentQuestionNum = currentQuestion;
 
-                // ✨ 고도화 대응 분기: 'playing', 'showing_answers', 'showing_real_answer' 상태 트리거 감지
                 if (currentQuestion > 0 && (status === 'playing' || status === 'showing_answers' || status === 'showing_real_answer')) {
                     if(actualDBBingoArray.includes(currentQuestion)) {
                         openInputModal(currentQuestion, status, questionText, category, difficulty, serverRealAnswer);
@@ -314,7 +313,6 @@
             document.getElementById('play-bingo-count').innerText = `${bingo} Bingo`;
         }
 
-        // ✨ 리팩토링 및 동기화 스위칭 강화
         function openInputModal(qNum, status, questionText, category, difficulty, serverRealAnswer) {
             document.getElementById('modal-qnum-tag').innerText = `QUESTION ${String(qNum).padStart(2, '0')}`;
             document.getElementById('modal-target-num').innerText = `${qNum}번`;
@@ -332,7 +330,7 @@
 
             document.getElementById('input-modal').classList.remove('hidden');
 
-            // 1단계 분기: 마스터가 조별 답안 수집 단계에 진입했을 때 (`showing_answers`)
+            // 1단계 분기: 마스터가 조별 답안 수집 단계에 진입했을 때
             if(status === 'showing_answers') {
                 inputField.disabled = true;
                 submitBtn.disabled = true;
@@ -343,7 +341,7 @@
                 return;
             }
 
-            // 2단계 분기: 🔥 핵심 추가 - 마스터가 실제 정답까지 완벽히 공개했을 때 (`showing_real_answer`)
+            // 2단계 분기: 마스터가 실제 정답을 공개했을 때
             if(status === 'showing_real_answer') {
                 inputField.disabled = true;
                 submitBtn.disabled = true;
@@ -351,16 +349,14 @@
                 submitBtn.innerText = "퀴즈 정답 공개 완료";
                 statusMsg.innerText = "";
                 
-                // 모바일 정답 확인 패널 노출 및 연동 정답 바인딩
                 realAnswerText.innerText = serverRealAnswer || "확인 불가";
                 realAnswerZone.classList.remove('hidden');
                 
-                // 모달 테두리를 오렌지 테마로 시각 변경하여 마스터 보드 디자인 스케일 감각과 통일
                 modalContainer.className = "bg-slate-800 border-2 border-orange-500 w-full rounded-2xl p-5 space-y-4 max-h-[95vh] overflow-y-auto transform scale-100";
                 return;
             }
 
-            // 일반 플레이 단계일 때 (`playing`) 기존 데이터 바인딩 로직 안정적 수행
+            // 일반 풀이 단계 (playing)
             realAnswerZone.classList.add('hidden');
             modalContainer.className = "bg-slate-800 border border-amber-400 w-full rounded-2xl p-5 space-y-4 max-h-[95vh] overflow-y-auto transform scale-100";
 
