@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>스마트 골든벨 - 학생용</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -38,7 +37,6 @@
         <div id="team-title-indicator" class="text-xl font-black text-yellow-400 mt-0.5">조 선택 대기 중</div>
     </div>
 
-    <!-- STEP 1: 조 선택 -->
     <div id="step-team-select" class="step-panel active space-y-6 my-auto">
         <div class="text-center">
             <h2 class="text-2xl font-black mb-2">반갑습니다! 👋</h2>
@@ -53,7 +51,6 @@
         </div>
     </div>
 
-    <!-- STEP 2: DIY 빙고판 구성 -->
     <div id="step-bingo-setup" class="step-panel space-y-4">
         <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl text-center text-xs text-slate-400">
             💡 <strong class="text-blue-400 font-bold">배치 방식:</strong> 아래 숫자 칩을 터치한 후, 위 빈 칸의 원하는 위치를 터치하면 배치됩니다.
@@ -68,7 +65,6 @@
         </button>
     </div>
 
-    <!-- STEP 3: 인게임 진행 -->
     <div id="step-game-play" class="step-panel space-y-4">
         <div class="p-3 bg-slate-900 border border-slate-800 rounded-xl flex justify-between items-center text-xs">
             <span class="text-slate-400">상태: <span class="text-emerald-400 font-bold">실시간 동기화 완료</span></span>
@@ -78,9 +74,8 @@
         <div class="text-center text-xs text-slate-500 py-2">선생님이 문제를 출제하면 정답 입력창이 자동으로 켜집니다.</div>
     </div>
 
-    <!-- 정답 입력 모달 팝업 -->
     <div id="input-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
-        <div class="bg-slate-800 border border-amber-400 w-full rounded-2xl p-5 space-y-4 max-h-[95vh] overflow-y-auto">
+        <div id="modal-content-container" class="bg-slate-800 border border-amber-400 w-full rounded-2xl p-5 space-y-4 max-h-[95vh] overflow-y-auto transform transition-all">
             <div class="flex justify-between items-center">
                 <span class="bg-amber-400 text-slate-950 text-xs font-black px-2.5 py-0.5 rounded-full" id="modal-qnum-tag">QUESTION --</span>
                 <div class="flex gap-1">
@@ -94,10 +89,9 @@
                 <p class="text-2xl font-black text-yellow-400" id="modal-target-num">--</p>
             </div>
 
-            <!-- 💥 [핵심 추가] 내 스마트폰 화면에서도 실시간 문제가 동일하게 출력됨 -->
             <div class="bg-slate-950 rounded-xl p-4 border border-slate-700 min-h-[80px] flex items-center justify-center">
                 <p id="modal-team-question-body" class="text-sm md:text-base font-bold text-center text-slate-100 whitespace-pre-line leading-relaxed break-keep">
-                    문제를 불러오는 중입니다...
+                     문제를 불러오는 중입니다...
                 </p>
             </div>
 
@@ -105,6 +99,12 @@
                 <label class="text-xs font-bold text-slate-300">정답 작성:</label>
                 <input type="text" id="team-answer-input" placeholder="정답을 정확히 입력하세요" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white text-base focus:outline-none focus:border-blue-500 text-center font-bold">
             </div>
+
+            <div id="mobile-real-answer-zone" class="hidden bg-gradient-to-r from-orange-600/40 to-amber-600/40 border border-orange-400 rounded-xl p-3.5 text-center transition-all">
+                <p class="text-xs font-black text-orange-400 uppercase tracking-widest mb-1">📢 목사님 공인 실제 정답</p>
+                <p id="mobile-real-answer-text" class="text-xl font-black text-yellow-300 tracking-wide"></p>
+            </div>
+
             <div id="submit-status-msg" class="text-xs text-center text-slate-400 h-4"></div>
             <button id="btn-send-answer" onclick="sendAnswerToFirebase()" class="w-full py-3.5 bg-blue-500 hover:bg-blue-600 text-white font-black rounded-xl text-base transition">
                 정답 제출하기
@@ -261,16 +261,17 @@
                 const currentQuestion = gameStatus.currentQuestion || 0;
                 const status = gameStatus.status || 'waiting';
                 
-                // 💥 [핵심 변경] Firebase에서 넘겨주는 퀴즈 메타데이터 확보
                 const questionText = gameStatus.currentQuestionText || "질문을 불러오는 중...";
                 const category = gameStatus.currentCategory || "일반";
                 const difficulty = gameStatus.currentDifficulty || "중";
+                const serverRealAnswer = gameStatus.currentRealAnswer || ""; // 마스터측 송신 정답 캐시
 
                 globalCurrentQuestionNum = currentQuestion;
 
-                if (currentQuestion > 0 && (status === 'playing' || status === 'showing_answers')) {
+                // ✨ 고도화 대응 분기: 'playing', 'showing_answers', 'showing_real_answer' 상태 트리거 감지
+                if (currentQuestion > 0 && (status === 'playing' || status === 'showing_answers' || status === 'showing_real_answer')) {
                     if(actualDBBingoArray.includes(currentQuestion)) {
-                        openInputModal(currentQuestion, status, questionText, category, difficulty);
+                        openInputModal(currentQuestion, status, questionText, category, difficulty, serverRealAnswer);
                     }
                 } else {
                     closeInputModal();
@@ -313,8 +314,8 @@
             document.getElementById('play-bingo-count').innerText = `${bingo} Bingo`;
         }
 
-        // 💥 [핵심 변경] 모달 열릴 때 문제 텍스트 및 정보들을 함께 받아서 UI에 삽입
-        function openInputModal(qNum, status, questionText, category, difficulty) {
+        // ✨ 리팩토링 및 동기화 스위칭 강화
+        function openInputModal(qNum, status, questionText, category, difficulty, serverRealAnswer) {
             document.getElementById('modal-qnum-tag').innerText = `QUESTION ${String(qNum).padStart(2, '0')}`;
             document.getElementById('modal-target-num').innerText = `${qNum}번`;
             
@@ -325,16 +326,43 @@
             const inputField = document.getElementById('team-answer-input');
             const submitBtn = document.getElementById('btn-send-answer');
             const statusMsg = document.getElementById('submit-status-msg');
+            const realAnswerZone = document.getElementById('mobile-real-answer-zone');
+            const realAnswerText = document.getElementById('mobile-real-answer-text');
+            const modalContainer = document.getElementById('modal-content-container');
 
             document.getElementById('input-modal').classList.remove('hidden');
 
+            // 1단계 분기: 마스터가 조별 답안 수집 단계에 진입했을 때 (`showing_answers`)
             if(status === 'showing_answers') {
                 inputField.disabled = true;
                 submitBtn.disabled = true;
                 submitBtn.className = "w-full py-3.5 bg-slate-600 text-slate-400 font-bold rounded-xl text-base cursor-not-allowed";
                 submitBtn.innerText = "선생님이 정답을 확인 중입니다";
+                realAnswerZone.classList.add('hidden');
+                modalContainer.className = "bg-slate-800 border border-amber-400 w-full rounded-2xl p-5 space-y-4 max-h-[95vh] overflow-y-auto transform scale-100";
                 return;
             }
+
+            // 2단계 분기: 🔥 핵심 추가 - 마스터가 실제 정답까지 완벽히 공개했을 때 (`showing_real_answer`)
+            if(status === 'showing_real_answer') {
+                inputField.disabled = true;
+                submitBtn.disabled = true;
+                submitBtn.className = "w-full py-3.5 bg-slate-700 text-slate-500 font-bold rounded-xl text-base cursor-not-allowed";
+                submitBtn.innerText = "퀴즈 정답 공개 완료";
+                statusMsg.innerText = "";
+                
+                // 모바일 정답 확인 패널 노출 및 연동 정답 바인딩
+                realAnswerText.innerText = serverRealAnswer || "확인 불가";
+                realAnswerZone.classList.remove('hidden');
+                
+                // 모달 테두리를 오렌지 테마로 시각 변경하여 마스터 보드 디자인 스케일 감각과 통일
+                modalContainer.className = "bg-slate-800 border-2 border-orange-500 w-full rounded-2xl p-5 space-y-4 max-h-[95vh] overflow-y-auto transform scale-100";
+                return;
+            }
+
+            // 일반 플레이 단계일 때 (`playing`) 기존 데이터 바인딩 로직 안정적 수행
+            realAnswerZone.classList.add('hidden');
+            modalContainer.className = "bg-slate-800 border border-amber-400 w-full rounded-2xl p-5 space-y-4 max-h-[95vh] overflow-y-auto transform scale-100";
 
             get(ref(db, `teams/${myTeamId}/answers/${qNum}`)).then((snapshot) => {
                 const prevAns = snapshot.val();
@@ -348,6 +376,7 @@
                 } else {
                     inputField.value = "";
                     inputField.disabled = false;
+                    inputField.focus();
                     submitBtn.disabled = false;
                     submitBtn.className = "w-full py-3.5 bg-blue-500 hover:bg-blue-600 text-white font-black rounded-xl text-base";
                     submitBtn.innerText = "정답 제출하기";
