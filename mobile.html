@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>스마트 골든벨 - 학생용</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -37,6 +38,7 @@
         <div id="team-title-indicator" class="text-xl font-black text-yellow-400 mt-0.5">조 선택 대기 중</div>
     </div>
 
+    <!-- STEP 1: 조 선택 -->
     <div id="step-team-select" class="step-panel active space-y-6 my-auto">
         <div class="text-center">
             <h2 class="text-2xl font-black mb-2">반갑습니다! 👋</h2>
@@ -51,9 +53,14 @@
         </div>
     </div>
 
+    <!-- STEP 2: DIY 빙고판 구성 -->
     <div id="step-bingo-setup" class="step-panel space-y-4">
-        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl text-center text-xs text-slate-400">
-            💡 <strong class="text-blue-400 font-bold">배치 방식:</strong> 아래 숫자 칩을 터치한 후, 위 빈 칸의 원하는 위치를 터치하면 배치됩니다.
+        <div class="flex flex-col gap-2 bg-slate-900 border border-slate-800 p-3 rounded-xl text-center text-xs text-slate-400">
+            <div>💡 <strong class="text-blue-400 font-bold">배치 방식:</strong> 숫자 칩을 터치한 후 빈 칸을 터치하세요.</div>
+            <!-- ✨ 신규 추가: 랜덤 배치 기능 퀵 패널 버튼 -->
+            <button onclick="fillBingoRandomly()" class="mt-1 w-full py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-yellow-400 font-black rounded-lg transition active:scale-95 text-xs flex items-center justify-center gap-1">
+                🎲 1초 만에 무작위 자동 배치하기 (이후 직접 수정 가능)
+            </button>
         </div>
         <div class="grid grid-cols-5 gap-2 aspect-square w-full bg-slate-950 p-2 rounded-2xl border border-slate-800" id="setup-grid"></div>
         <div>
@@ -65,6 +72,7 @@
         </button>
     </div>
 
+    <!-- STEP 3: 인게임 진행 -->
     <div id="step-game-play" class="step-panel space-y-4">
         <div class="p-3 bg-slate-900 border border-slate-800 rounded-xl flex justify-between items-center text-xs">
             <span class="text-slate-400">상태: <span class="text-emerald-400 font-bold">실시간 동기화 완료</span></span>
@@ -74,6 +82,7 @@
         <div class="text-center text-xs text-slate-500 py-2">선생님이 문제를 출제하면 정답 입력창이 자동으로 켜집니다.</div>
     </div>
 
+    <!-- 정답 입력 모달 팝업 -->
     <div id="input-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
         <div id="modal-content-container" class="bg-slate-800 border border-amber-400 w-full rounded-2xl p-5 space-y-4 max-h-[95vh] overflow-y-auto transform transition-all">
             <div class="flex justify-between items-center">
@@ -100,6 +109,7 @@
                 <input type="text" id="team-answer-input" placeholder="정답을 정확히 입력하세요" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-white text-base focus:outline-none focus:border-blue-500 text-center font-bold">
             </div>
 
+            <!-- 실제 정답 노출 영역 -->
             <div id="mobile-real-answer-zone" class="hidden bg-gradient-to-r from-orange-600/40 to-amber-600/40 border border-orange-400 rounded-xl p-3.5 text-center transition-all">
                 <p class="text-xs font-black text-orange-400 uppercase tracking-widest mb-1">🎯 퀴즈 실제 정답</p>
                 <p id="mobile-real-answer-text" class="text-xl font-black text-yellow-300 tracking-wide"></p>
@@ -172,6 +182,7 @@
             setupGrid.innerHTML = '';
             for(let i=0; i<25; i++) {
                 const cell = document.createElement('button');
+                cell.id = `setup-cell-${i}`;
                 cell.className = "bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-lg font-black text-slate-600 aspect-square";
                 cell.onclick = () => placeNumberInCell(i, cell);
                 setupGrid.appendChild(cell);
@@ -204,6 +215,17 @@
             sfxTouch.play().catch(e => {}); 
             
             if(selectedChipNum !== null) {
+                // 이미 다른 셀에 들어있던 값이라면 기존 위치 클리어 (중복 방지 최적화)
+                const existingIdx = localBingoArray.indexOf(selectedChipNum);
+                if (existingIdx !== -1) {
+                    localBingoArray[existingIdx] = null;
+                    const oldCell = document.getElementById(`setup-cell-${existingIdx}`);
+                    if(oldCell) {
+                        oldCell.innerText = "";
+                        oldCell.className = "bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-lg font-black text-slate-600 aspect-square";
+                    }
+                }
+
                 localBingoArray[index] = selectedChipNum;
                 cellElement.innerText = selectedChipNum;
                 cellElement.className = "bg-slate-800 border-2 border-blue-500 rounded-xl flex items-center justify-center text-xl font-black text-white aspect-square";
@@ -218,6 +240,31 @@
                 }
             }
         }
+
+        // ✨ 신규 추가: 25개 무작위 자동 배치 스크립트 알고리즘 기믹
+        window.fillBingoRandomly = function() {
+            sfxTouch.currentTime = 0;
+            sfxTouch.play().catch(e => {});
+
+            // 1부터 25까지의 숫자를 생성 후 셔플(Fisher-Yates Shuffle)
+            let numbers = Array.from({length: 25}, (_, i) => i + 1);
+            for (let i = numbers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+            }
+
+            // 로컬 배열에 삽입 및 UI 동시 업데이트 피드백
+            localBingoArray = [...numbers];
+            for(let i=0; i<25; i++) {
+                const cell = document.getElementById(`setup-cell-${i}`);
+                if(cell) {
+                    cell.innerText = localBingoArray[i];
+                    cell.className = "bg-slate-800 border-2 border-blue-500 rounded-xl flex items-center justify-center text-xl font-black text-white aspect-square";
+                }
+            }
+            selectedChipNum = null;
+            refreshChips(); // 칩 리스트 자동 소멸 및 완성 버튼 연동 활성화
+        };
 
         function checkSetupComplete() {
             const btn = document.getElementById('btn-submit-board');
@@ -330,7 +377,6 @@
 
             document.getElementById('input-modal').classList.remove('hidden');
 
-            // 1단계 분기: 마스터가 조별 답안 수집 단계에 진입했을 때
             if(status === 'showing_answers') {
                 inputField.disabled = true;
                 submitBtn.disabled = true;
@@ -341,7 +387,6 @@
                 return;
             }
 
-            // 2단계 분기: 마스터가 실제 정답을 공개했을 때
             if(status === 'showing_real_answer') {
                 inputField.disabled = true;
                 submitBtn.disabled = true;
@@ -356,7 +401,6 @@
                 return;
             }
 
-            // 일반 풀이 단계 (playing)
             realAnswerZone.classList.add('hidden');
             modalContainer.className = "bg-slate-800 border border-amber-400 w-full rounded-2xl p-5 space-y-4 max-h-[95vh] overflow-y-auto transform scale-100";
 
