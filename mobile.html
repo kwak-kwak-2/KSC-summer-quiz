@@ -83,7 +83,7 @@
         <div class="text-center text-xs text-slate-500 py-2">선생님이 문제를 출제하면 정답 입력창이 자동으로 켜집니다.</div>
     </div>
 
-    <!-- 모바일 입력 모달 (실시간 타이머 UI 추가) -->
+    <!-- 모바일 입력 모달 -->
     <div id="input-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
         <div id="modal-content-container" class="bg-slate-800 border border-amber-400 w-full rounded-2xl p-5 space-y-4 max-h-[95vh] overflow-y-auto transform transition-all">
             <div class="flex justify-between items-center">
@@ -94,7 +94,7 @@
                 </div>
             </div>
             
-            <!-- ✨ 모바일용 실시간 타이머 바 영역 추가 -->
+            <!-- 모바일용 실시간 타이머 바 (마스터 동기화 지원) -->
             <div id="mobile-timer-zone" class="bg-slate-950 p-3 rounded-xl border border-slate-700/60">
                 <div class="flex justify-between items-center mb-1">
                     <span class="text-[10px] font-bold text-slate-400">⏱️ 남은 시간</span>
@@ -164,8 +164,6 @@
         let actualDBBingoArray = [];
         let globalCurrentQuestionNum = 0;
         let previousOccupiedCount = 0; 
-
-        // 모바일 독립형 실시간 렌더러 타이머 변수
         let mobileTimerLoop = null;
 
         window.selectTeam = function(teamId) {
@@ -340,7 +338,6 @@
                 const difficulty = gameStatus.currentDifficulty || "중";
                 const serverRealAnswer = gameStatus.currentRealAnswer || "";
                 
-                // 마스터가 넘겨준 타이머 연동용 기초 메타데이터 추출
                 const startTime = gameStatus.startTime || 0;
                 const totalTime = gameStatus.totalTime || 0;
                 const isPaused = gameStatus.isPaused || false;
@@ -351,7 +348,6 @@
                 if (currentQuestion > 0 && (status === 'playing' || status === 'showing_answers' || status === 'showing_real_answer')) {
                     if(actualDBBingoArray.includes(currentQuestion)) {
                         openInputModal(currentQuestion, status, questionText, category, difficulty, serverRealAnswer);
-                        // 모달 오픈 직후 모바일 실시간 타이머 동기화 루프 기동
                         syncMobileTimer(startTime, totalTime, isPaused, pauseLeftTime, status);
                     }
                 } else {
@@ -384,7 +380,6 @@
             });
         }
 
-        // ✨ 학생 기기 내 실시간 타이머 가동 함수 구현
         function syncMobileTimer(startTime, totalTime, isPaused, pauseLeftTime, status) {
             if(mobileTimerLoop) clearInterval(mobileTimerLoop);
 
@@ -392,7 +387,6 @@
             const timerText = document.getElementById('mobile-timer-text');
             const pBar = document.getElementById('mobile-timer-progress');
 
-            // 채점 상태거나 정답이 이미 공개되었다면 타이머 바 영역 완전 히든 처리
             if(status === 'showing_answers' || status === 'showing_real_answer') {
                 timerZone.classList.add('hidden');
                 return;
@@ -410,12 +404,10 @@
 
                 if(mLeft < 0) mLeft = 0;
 
-                // 타이머 텍스트 갱신 (MM:SS)
                 const min = String(Math.floor(mLeft / 60)).padStart(2, '0');
                 const sec = String(mLeft % 60).padStart(2, '0');
                 timerText.innerText = `${min}:${sec}`;
 
-                // 프로그레스 바 너비 및 컬러 피드백 계산 반영
                 const pct = totalTime > 0 ? (mLeft / totalTime) * 100 : 0;
                 pBar.style.width = `${pct}%`;
 
