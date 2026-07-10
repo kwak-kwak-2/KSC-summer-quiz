@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>스마트 골든벨 빙고 시스템 - 마스터 보드</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -63,6 +64,7 @@
         </div>
     </div>
 
+    <!-- 퀴즈 모달 -->
     <div id="quiz-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 p-4">
         <div id="modal-container" class="bg-slate-800 border-2 border-blue-500 rounded-3xl w-full max-w-3xl p-6 shadow-2xl neon-border-blue transform transition-all scale-100">
             
@@ -101,6 +103,7 @@
                 <div id="live-answers-grid" class="grid grid-cols-5 gap-2"></div>
             </div>
 
+            <!-- 실제 정답 노출 히든 영역 -->
             <div id="real-answer-zone" class="hidden mb-6 bg-gradient-to-r from-orange-600/30 to-amber-600/30 border-2 border-orange-500 rounded-2xl p-4 text-center animate-pulse">
                 <span class="text-xs font-black bg-orange-500 text-slate-950 px-2 py-0.5 rounded-md uppercase tracking-wider mr-2">Real Answer</span>
                 <span id="real-answer-text" class="text-2xl md:text-3xl font-black text-yellow-300 tracking-wide"></span>
@@ -152,7 +155,7 @@
         sfxTick.volume = 0.4;
         sfxWarning.volume = 0.6;
 
-        // 요청 조건에 따른 문항 교체 및 발문 수정 완료
+        // 19번 우리 공항성산교회 설립일 퀴즈로 전면 교체 완료
         const quizBank = {
             // [성경 카테고리 - 총 15문제]
             1: { cat: "성경", diff: "상", time: 60, q: "Q. 영원 안에서 삼위 하나님 간에 맺으신 언약으로, 택자들의 구원에 관한 신성한 합의를 무슨 언약이라고 할까요?", ans: "구속언약" },
@@ -175,10 +178,10 @@
 
             // [팀원 카테고리 - 총 5문제]
             16: { cat: "팀원", diff: "중", time: 45, q: "Q. [조장 미션] 조장이 일어서서 우리 조원 전체의 이름을 성을 떼고 한 명도 틀리지 않고 7초 안에 외치세요!", ans: "미션성공" },
-            17: { cat: "팀원", diff: "하", time: 30, q: "Q. [팀워크 미션] 조원 전체가 중앙으로 손을 모으고 다 같이 파이팅 넘치게 '조 구호'를 목소리 맞춰 외치세요!", ans: "미션성공" },
-            18: { cat: "팀원", diff: "하", time: 30, q: "Q. [친밀도 미션] 우리 조원 중에서 생일이 가장 빠른 사람의 '이름'을 정확하게 적어주세요.", ans: "확인완료" },
-            19: { cat: "팀원", diff: "하", time: 30, q: "Q. [소통 미션] 지금 우리 조에서 가장 나이가 많은 조원(또는 선생님)에게 다 같이 다가가 힘차게 안아주거나 어깨를 주물러 드리세요!", ans: "미션성공" },
-            20: { cat: "팀원", diff: "하", time: 30, q: "Q. [칭찬 미션] 조원들이 동그랗게 둘러앉아 오른쪽 사람을 바라보며 장점을 딱 한 가지씩 칭찬해 주는 칭찬 릴레이를 펼치세요!", ans: "미션성공" },
+            17: { cat: "팀원", diff: "하", time: 45, q: "Q. [조원 탐구] 우리 조원(학생)들의 상의와 하의 의상 중에서 '가장 많이 입고 있는 옷 색상'은 무엇인가요?", ans: "조별자율정답" },
+            18: { cat: "팀원", diff: "하", time: 45, q: "Q. [조원 탐구] 우리 조원(학생)들 중에서 실제 '생일이 가장 빠른 사람(맏이)'의 이름은 누구일까요?", ans: "조별제출" },
+            19: { cat: "팀원", diff: "하", time: 45, q: "Q. [교회 퀴즈] 조원들과 상의하여 맞춰보세요. 우리 공항성산교회의 설립일(교회 생일)은 몇 월 몇 일일까요?", ans: "교회설립일정답" },
+            20: { cat: "팀원", diff: "하", time: 45, q: "Q. [조원 소통] 우리 조원(학생)들의 이름을 '가나다순'으로 정렬했을 때, 가장 마지막 순서에 오는 조원의 이름은 누구일까요?", ans: "조별제출" },
 
             // [상식 카테고리 - 총 5문제]
             21: { cat: "상식", diff: "상", time: 60, q: "Q. 빈칸에 들어갈 숫자는 무엇일까요?\n1, 2, 3, 5, 8, 13, ( )", ans: "21" },
@@ -447,7 +450,10 @@
         window.revealRealAnswer = function() {
             if (currentActiveQId === 0) return;
             
-            const targetAnswer = quizBank[currentActiveQId].ans;
+            let targetAnswer = quizBank[currentActiveQId].ans;
+            if(targetAnswer === "교회설립일정답" || targetAnswer === "조별자율정답") {
+                targetAnswer = "각 조별 입력 확인 및 전원 정답 처리 유도";
+            }
             
             const answerZone = document.getElementById('real-answer-zone');
             const answerText = document.getElementById('real-answer-text');
