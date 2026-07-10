@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>스마트 골든벨 빙고 시스템 - 마스터 보드</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -63,6 +64,7 @@
         </div>
     </div>
 
+    <!-- 퀴즈 모달 -->
     <div id="quiz-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 p-4">
         <div id="modal-container" class="bg-slate-800 border-2 border-blue-500 rounded-3xl w-full max-w-3xl p-6 shadow-2xl neon-border-blue transform transition-all scale-100">
             
@@ -101,6 +103,7 @@
                 <div id="live-answers-grid" class="grid grid-cols-5 gap-2"></div>
             </div>
 
+            <!-- 실제 정답 노출 히든 영역 -->
             <div id="real-answer-zone" class="hidden mb-6 bg-gradient-to-r from-orange-600/30 to-amber-600/30 border-2 border-orange-500 rounded-2xl p-4 text-center animate-pulse">
                 <span class="text-xs font-black bg-orange-500 text-slate-950 px-2 py-0.5 rounded-md uppercase tracking-wider mr-2">Real Answer</span>
                 <span id="real-answer-text" class="text-2xl md:text-3xl font-black text-yellow-300 tracking-wide"></span>
@@ -152,7 +155,6 @@
         sfxTick.volume = 0.4;
         sfxWarning.volume = 0.6;
 
-        // 수련회 교리 퀴즈 파일 내용 기반으로 25문제 전체 교체
         const quizBank = {
             1: { cat: "성경", diff: "하", time: 45, q: "Q. 모든 사람에게 주어진 하나님을 아는 지식을 특별 계시라고 부른다. (O/X)", ans: "X" },
             2: { cat: "성경", diff: "중", time: 60, q: "Q. 일반계시만으로 하나님에 대해 알 수 있다. (O/X)", ans: "X" },
@@ -186,6 +188,7 @@
         let timeLeft = 0;
         let totalTimerTime = 0;
         let isTimerRunning = false;
+        let pauseOffsetTime = 0; // 일시정지 보정용 시간값 변수
 
         const mainBoard = document.getElementById('main-board');
         for (let i = 1; i <= 25; i++) {
@@ -194,7 +197,7 @@
             btn.className = "bg-slate-700 hover:bg-blue-600 border border-slate-600 text-2xl font-black rounded-2xl flex flex-col items-center justify-center transition p-4 shadow-md text-slate-100 hover:scale-105 active:scale-95";
             
             let badgeColor = "text-slate-400";
-            if(quizBank[i].diff === "최상" || quizBank[i].diff === "상") badgeColor="text-red-400 text-xs";
+            if(quizBank[i].diff === "상") badgeColor="text-red-400 text-xs";
             else if(quizBank[i].diff === "중") badgeColor="text-purple-400 text-xs";
             else badgeColor="text-emerald-400 text-xs";
 
@@ -341,17 +344,22 @@
 
             timeLeft = qData.time;
             totalTimerTime = qData.time;
+            pauseOffsetTime = 0;
             updateTimerUI();
 
             document.getElementById('quiz-modal').classList.remove('hidden');
 
+            // 모바일 연동용 타이머 기준시각(Date.now()) 전송 로직 추가
             update(ref(db, 'game'), { 
                 currentQuestion: qId, 
                 status: 'playing',
                 currentQuestionText: qData.q,
                 currentCategory: qData.cat,
                 currentDifficulty: qData.diff,
-                currentRealAnswer: ""
+                currentRealAnswer: "",
+                startTime: Date.now(),
+                totalTime: qData.time,
+                isPaused: false
             });
 
             isTimerRunning = true;
@@ -387,6 +395,21 @@
         window.toggleTimer = function() {
             isTimerRunning = !isTimerRunning;
             document.getElementById('btn-timer-toggle').innerText = isTimerRunning ? "일시정지" : "재개";
+            
+            if(!isTimerRunning) {
+                // 일시정지 시점까지 흘러간 시간을 보정값으로 세팅
+                update(ref(db, 'game'), { 
+                    isPaused: true,
+                    pauseLeftTime: timeLeft
+                });
+            } else {
+                // 재개할 때 새로운 기준시각과 남은 시간 재동기화 푸시
+                update(ref(db, 'game'), { 
+                    isPaused: false,
+                    startTime: Date.now(),
+                    totalTime: timeLeft
+                });
+            }
         };
 
         function updateTimerUI() {
@@ -472,7 +495,10 @@
                 currentQuestionText: "",
                 currentCategory: "",
                 currentDifficulty: "",
-                currentRealAnswer: ""
+                currentRealAnswer: "",
+                startTime: 0,
+                totalTime: 0,
+                isPaused: false
             });
         };
 
@@ -488,7 +514,10 @@
                         currentQuestionText: "",
                         currentCategory: "",
                         currentDifficulty: "",
-                        currentRealAnswer: ""
+                        currentRealAnswer: "",
+                        startTime: 0,
+                        totalTime: 0,
+                        isPaused: false
                     },
                     teams: {
                         1: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false} },
