@@ -261,15 +261,12 @@
             refreshChips();
         };
 
-        // ✨ 신규 추가: 빙고판 전체 초기화 함수 기믹
         window.clearBingoBoard = function() {
             sfxTouch.currentTime = 0;
             sfxTouch.play().catch(e => {});
 
-            // 로컬 판 배열을 null로 완전히 초기화
             localBingoArray = new Array(25).fill(null);
             
-            // 모든 셀 UI를 기본 빈 칸 테마로 변환
             for(let i=0; i<25; i++) {
                 const cell = document.getElementById(`setup-cell-${i}`);
                 if(cell) {
@@ -278,7 +275,7 @@
                 }
             }
             selectedChipNum = null;
-            refreshChips(); // 아래 숫자 칩 리스트를 다시 1~25로 풀 세팅 복구
+            refreshChips();
         };
 
         function checkSetupComplete() {
