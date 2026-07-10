@@ -83,6 +83,7 @@
         <div class="text-center text-xs text-slate-500 py-2">선생님이 문제를 출제하면 정답 입력창이 자동으로 켜집니다.</div>
     </div>
 
+    <!-- 모바일 입력 모달 (실시간 타이머 UI 추가) -->
     <div id="input-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
         <div id="modal-content-container" class="bg-slate-800 border border-amber-400 w-full rounded-2xl p-5 space-y-4 max-h-[95vh] overflow-y-auto transform transition-all">
             <div class="flex justify-between items-center">
@@ -90,6 +91,17 @@
                 <div class="flex gap-1">
                     <span id="modal-team-cat" class="bg-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-md text-white">카테고리</span>
                     <span id="modal-team-diff" class="bg-purple-600 text-[10px] font-bold px-2 py-0.5 rounded-md text-white">난이도</span>
+                </div>
+            </div>
+            
+            <!-- ✨ 모바일용 실시간 타이머 바 영역 추가 -->
+            <div id="mobile-timer-zone" class="bg-slate-950 p-3 rounded-xl border border-slate-700/60">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-[10px] font-bold text-slate-400">⏱️ 남은 시간</span>
+                    <span id="mobile-timer-text" class="text-sm font-mono font-bold text-amber-400">00:00</span>
+                </div>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div id="mobile-timer-progress" class="bg-gradient-to-r from-emerald-400 to-blue-500 h-full w-full transition-all duration-1000 ease-linear"></div>
                 </div>
             </div>
             
@@ -152,6 +164,9 @@
         let actualDBBingoArray = [];
         let globalCurrentQuestionNum = 0;
         let previousOccupiedCount = 0; 
+
+        // 모바일 독립형 실시간 렌더러 타이머 변수
+        let mobileTimerLoop = null;
 
         window.selectTeam = function(teamId) {
             myTeamId = teamId;
@@ -324,12 +339,20 @@
                 const category = gameStatus.currentCategory || "일반";
                 const difficulty = gameStatus.currentDifficulty || "중";
                 const serverRealAnswer = gameStatus.currentRealAnswer || "";
+                
+                // 마스터가 넘겨준 타이머 연동용 기초 메타데이터 추출
+                const startTime = gameStatus.startTime || 0;
+                const totalTime = gameStatus.totalTime || 0;
+                const isPaused = gameStatus.isPaused || false;
+                const pauseLeftTime = gameStatus.pauseLeftTime || 0;
 
                 globalCurrentQuestionNum = currentQuestion;
 
                 if (currentQuestion > 0 && (status === 'playing' || status === 'showing_answers' || status === 'showing_real_answer')) {
                     if(actualDBBingoArray.includes(currentQuestion)) {
                         openInputModal(currentQuestion, status, questionText, category, difficulty, serverRealAnswer);
+                        // 모달 오픈 직후 모바일 실시간 타이머 동기화 루프 기동
+                        syncMobileTimer(startTime, totalTime, isPaused, pauseLeftTime, status);
                     }
                 } else {
                     closeInputModal();
@@ -359,6 +382,56 @@
 
                 calculatePlayBingo(occupied);
             });
+        }
+
+        // ✨ 학생 기기 내 실시간 타이머 가동 함수 구현
+        function syncMobileTimer(startTime, totalTime, isPaused, pauseLeftTime, status) {
+            if(mobileTimerLoop) clearInterval(mobileTimerLoop);
+
+            const timerZone = document.getElementById('mobile-timer-zone');
+            const timerText = document.getElementById('mobile-timer-text');
+            const pBar = document.getElementById('mobile-timer-progress');
+
+            // 채점 상태거나 정답이 이미 공개되었다면 타이머 바 영역 완전 히든 처리
+            if(status === 'showing_answers' || status === 'showing_real_answer') {
+                timerZone.classList.add('hidden');
+                return;
+            }
+            timerZone.classList.remove('hidden');
+
+            function runTick() {
+                let mLeft = 0;
+                if(isPaused) {
+                    mLeft = pauseLeftTime;
+                } else {
+                    const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
+                    mLeft = totalTime - elapsedSec;
+                }
+
+                if(mLeft < 0) mLeft = 0;
+
+                // 타이머 텍스트 갱신 (MM:SS)
+                const min = String(Math.floor(mLeft / 60)).padStart(2, '0');
+                const sec = String(mLeft % 60).padStart(2, '0');
+                timerText.innerText = `${min}:${sec}`;
+
+                // 프로그레스 바 너비 및 컬러 피드백 계산 반영
+                const pct = totalTime > 0 ? (mLeft / totalTime) * 100 : 0;
+                pBar.style.width = `${pct}%`;
+
+                if(pct <= 20) pBar.className = "bg-gradient-to-r from-red-500 to-rose-600 h-full transition-all duration-1000 ease-linear";
+                else if(pct <= 50) pBar.className = "bg-gradient-to-r from-amber-500 to-orange-500 h-full transition-all duration-1000 ease-linear";
+                else pBar.className = "bg-gradient-to-r from-emerald-400 to-blue-500 h-full transition-all duration-1000 ease-linear";
+
+                if(mLeft <= 0 && !isPaused) {
+                    clearInterval(mobileTimerLoop);
+                }
+            }
+
+            runTick();
+            if(!isPaused) {
+                mobileTimerLoop = setInterval(runTick, 1000);
+            }
         }
 
         function calculatePlayBingo(occupied) {
@@ -453,7 +526,10 @@
             });
         };
 
-        function closeInputModal() { document.getElementById('input-modal').classList.add('hidden'); }
+        function closeInputModal() { 
+            if(mobileTimerLoop) clearInterval(mobileTimerLoop);
+            document.getElementById('input-modal').classList.add('hidden'); 
+        }
     </script>
 </body>
 </html>
