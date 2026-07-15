@@ -94,7 +94,7 @@
                 </div>
             </div>
             
-            <!-- 모바일용 실시간 타이머 바 (마스터 동기화 지원) -->
+            <!-- 모바일용 실시간 타이머 바 (시간 제한 없을 때 동적 은폐) -->
             <div id="mobile-timer-zone" class="bg-slate-950 p-3 rounded-xl border border-slate-700/60">
                 <div class="flex justify-between items-center mb-1">
                     <span class="text-[10px] font-bold text-slate-400">⏱️ 남은 시간</span>
@@ -387,7 +387,8 @@
             const timerText = document.getElementById('mobile-timer-text');
             const pBar = document.getElementById('mobile-timer-progress');
 
-            if(status === 'showing_answers' || status === 'showing_real_answer') {
+            // 1. 결과 공개 상태이거나 서버의 제한 시간이 0(없음)인 경우 타이머 숨김
+            if(status === 'showing_answers' || status === 'showing_real_answer' || totalTime <= 0) {
                 timerZone.classList.add('hidden');
                 return;
             }
@@ -433,7 +434,7 @@
             for(let r=0; r<5; r++) { if(grid[r].every(num => occupied[num] === true)) bingo++; }
             for(let c=0; c<5; c++) { if([0,1,2,3,4].every(r => occupied[grid[r][c]] === true)) bingo++; }
             if([0,1,2,3,4].every(i => occupied[grid[i][i]] === true)) bingo++;
-            if([0,1,2,3,4].every(i => occupied[grid[i], 4-i] === true)) bingo++;
+            if([0,1,2,3,4].every(i => occupied[grid[i][4-i]] === true)) bingo++;
             document.getElementById('play-bingo-count').innerText = `${bingo} Bingo`;
         }
 
