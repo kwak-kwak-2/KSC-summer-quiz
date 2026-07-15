@@ -37,17 +37,18 @@
         <div id="team-title-indicator" class="text-xl font-black text-yellow-400 mt-0.5">조 선택 대기 중</div>
     </div>
 
-    <div id="step-team-select" class="step-panel active space-y-6 my-auto">
-        <div class="text-center">
-            <h2 class="text-2xl font-black mb-2">반갑습니다! 👋</h2>
+    <div id="step-team-select" class="step-panel active space-y-4 my-auto">
+        <div class="text-center mb-2">
+            <h2 class="text-2xl font-black mb-1">반갑습니다! 👋</h2>
             <p class="text-sm text-slate-400">자신이 속한 조의 버튼을 정확히 클릭하세요.</p>
         </div>
-        <div class="flex flex-col gap-3">
-            <button onclick="selectTeam(1)" class="w-full py-4 bg-red-600/90 active:bg-red-700 text-lg font-black rounded-2xl shadow transition text-white">1조 대표 접속</button>
-            <button onclick="selectTeam(2)" class="w-full py-4 bg-blue-600/90 active:bg-blue-700 text-lg font-black rounded-2xl shadow transition text-white">2조 대표 접속</button>
-            <button onclick="selectTeam(3)" class="w-full py-4 bg-emerald-600/90 active:bg-emerald-700 text-lg font-black rounded-2xl shadow transition text-white">3조 대표 접속</button>
-            <button onclick="selectTeam(4)" class="w-full py-4 bg-amber-600/90 active:bg-amber-700 text-lg font-black rounded-2xl shadow transition text-white">4조 대표 접속</button>
-            <button onclick="selectTeam(5)" class="w-full py-4 bg-purple-600/90 active:bg-purple-700 text-lg font-black rounded-2xl shadow transition text-white">5조 대표 접속</button>
+        <div class="flex flex-col gap-2.5">
+            <button onclick="selectTeam(1)" class="w-full py-3.5 bg-red-600/90 active:bg-red-700 text-lg font-black rounded-2xl shadow transition text-white">1조 대표 접속</button>
+            <button onclick="selectTeam(2)" class="w-full py-3.5 bg-blue-600/90 active:bg-blue-700 text-lg font-black rounded-2xl shadow transition text-white">2조 대표 접속</button>
+            <button onclick="selectTeam(3)" class="w-full py-3.5 bg-emerald-600/90 active:bg-emerald-700 text-lg font-black rounded-2xl shadow transition text-white">3조 대표 접속</button>
+            <button onclick="selectTeam(4)" class="w-full py-3.5 bg-amber-600/90 active:bg-amber-700 text-lg font-black rounded-2xl shadow transition text-white">4조 대표 접속</button>
+            <button onclick="selectTeam(5)" class="w-full py-3.5 bg-purple-600/90 active:bg-purple-700 text-lg font-black rounded-2xl shadow transition text-white">5조 대표 접속</button>
+            <button onclick="selectTeam(6)" class="w-full py-3.5 bg-pink-600/90 active:bg-pink-700 text-lg font-black rounded-2xl shadow transition text-white">6조 대표 접속</button> <!-- 6조 추가 -->
         </div>
     </div>
 
@@ -94,7 +95,7 @@
                 </div>
             </div>
             
-            <!-- 모바일용 실시간 타이머 바 (시간 제한 없을 때 동적 은폐) -->
+            <!-- 모바일용 실시간 타이머 바 -->
             <div id="mobile-timer-zone" class="bg-slate-950 p-3 rounded-xl border border-slate-700/60">
                 <div class="flex justify-between items-center mb-1">
                     <span class="text-[10px] font-bold text-slate-400">⏱️ 남은 시간</span>
@@ -387,7 +388,6 @@
             const timerText = document.getElementById('mobile-timer-text');
             const pBar = document.getElementById('mobile-timer-progress');
 
-            // 1. 결과 공개 상태이거나 서버의 제한 시간이 0(없음)인 경우 타이머 숨김
             if(status === 'showing_answers' || status === 'showing_real_answer' || totalTime <= 0) {
                 timerZone.classList.add('hidden');
                 return;
