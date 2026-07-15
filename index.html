@@ -82,7 +82,8 @@
                 <p id="modal-content" class="text-2xl md:text-3xl font-bold text-center text-slate-100 leading-relaxed break-keep">질문 내용 로딩 중...</p>
             </div>
 
-            <div class="mb-6 bg-slate-950 p-4 rounded-xl border border-slate-800">
+            <!-- 타이머 영역 (시간 제한 없는 문제는 자바스크립트로 hidden 처리됨) -->
+            <div id="master-timer-zone" class="mb-6 bg-slate-950 p-4 rounded-xl border border-slate-800">
                 <div class="flex justify-between items-center mb-2">
                     <button id="btn-timer-toggle" onclick="toggleTimer()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-3 py-1 rounded shadow transition">일시정지</button>
                     <div class="text-2xl font-mono font-bold text-amber-400" id="timer-text">00:00</div>
@@ -175,12 +176,42 @@
             14: { cat: "성경", diff: "하", time: 30, q: "Q. 우리 곁에서 늘 변호하시고 가르쳐 주시며 돕는 은혜를 베푸시는 성령님의 또 다른 명칭은 무엇일까요?", ans: "보혜사" },
             15: { cat: "성경", diff: "하", time: 30, q: "Q. 죄인이 실질적으로 의로워지는 게 아니라, 예수님 공로로 하나님께 의롭다고 선언받는 것을 뜻하는 단어는?", ans: "칭의" },
 
-            // [팀원 카테고리]
-            16: { cat: "팀원", diff: "중", time: 45, q: "Q. [조장 미션] 조장이 일어서서 우리 조원 전체의 이름을 성을 떼고 한 명도 틀리지 않고 7초 안에 외치세요!", ans: "미션성공" },
-            17: { cat: "팀원", diff: "하", time: 45, q: "Q. [조원 탐구] 우리 조원(학생)들의 상의와 하의 의상 중에서 '가장 많이 입고 있는 옷 색상'은 무엇인가요?", ans: "조별자율정답" },
-            18: { cat: "팀원", diff: "하", time: 45, q: "Q. [조원 탐구] 우리 조원(학생)들 중에서 실제 '생일이 가장 빠른 사람(맏이)'의 이름은 누구일까요?", ans: "조별제출" },
-            19: { cat: "팀원", diff: "하", time: 45, q: "Q. [교회 퀴즈] 조원들과 상의하여 맞춰보세요. 우리 공항성산교회의 설립일(교회 생일)은 몇 년 몇 월 일일까요?", ans: "1994년 3월 5일" },
-            20: { cat: "팀원", diff: "하", time: 45, q: "Q. [조원 소통] 우리 조원(학생)들의 이름을 '가나다순'으로 정렬했을 때, 가장 마지막 순서에 오는 조원의 이름은 누구일까요?", ans: "조별제출" },
+            // [팀원 카테고리] - 100% 액티비티 미션 (시간 제한 없음: time = 0)
+            16: { 
+                cat: "팀원", 
+                diff: "중", 
+                time: 0, 
+                q: "Q. [조원 액티비티] 일심동체 포즈! 진행자가 부르는 단어(예: 아이돌, 기도 등)를 듣고, 조원 전체가 동시에 완전히 똑같은 포즈를 취해 통일시키세요!", 
+                ans: "미션성공" 
+            },
+            17: { 
+                cat: "팀원", 
+                diff: "상", 
+                time: 0, 
+                q: "Q. [조원 액티비티] 몸으로 만드는 십자가! 조원 전원이 몸을 연결하여 가장 멋진 '십자가'를 만들고, 그대로 '10초' 동안 흔들림 없이 유지하세요!", 
+                ans: "미션성공" 
+            },
+            18: { 
+                cat: "팀원", 
+                diff: "중", 
+                time: 0, 
+                q: "Q. [조원 액티비티] 침묵의 생일순 정렬! 지금부터 목소리 내기 금지! 오직 눈빛과 손짓으로만 소통하여 생일이 가장 빠른 사람부터 느린 사람 순으로 한 줄로 정렬하세요!", 
+                ans: "미션성공" 
+            },
+            19: { 
+                cat: "팀원", 
+                diff: "상", 
+                time: 0, 
+                q: "Q. [조원 액티비티] 가치관 틀린그림찾기! 배부된 2장의 종이를 비교하여, '세상적 가치관'에서 '성경적 가치관'으로 분명한 기준이 세워지며 살짝살짝 미세하게 바뀐 5가지 포인트를 가장 먼저 찾아내어 외치세요!", 
+                ans: "미션성공" 
+            },
+            20: { 
+                cat: "팀원", 
+                diff: "상", 
+                time: 0, 
+                q: "Q. [조원 액티비티] 풍선을 잡아라! 조원 한 명이 허공에 바람 빠진 풍선을 놓는 순간, 대기하던 다른 조원이 쏜살같이 달려가 땅에 닿기 전에 풍선을 공중에서 캐치하세요!", 
+                ans: "미션성공" 
+            },
 
             // [상식 카테고리]
             21: { cat: "상식", diff: "상", time: 60, q: "Q. 빈칸에 들어갈 숫자는 무엇일까요?\n1, 2, 3, 5, 8, 13, ( )", ans: "21" },
@@ -348,9 +379,22 @@
 
             document.querySelectorAll('#scoring-zone input[type="checkbox"]').forEach(cb => cb.checked = false);
 
+            const timerZone = document.getElementById('master-timer-zone');
             timeLeft = qData.time;
             totalTimerTime = qData.time;
-            updateTimerUI();
+
+            if (timeLeft <= 0) {
+                // 시간 제한 없음 처리
+                timerZone.classList.add('hidden');
+                isTimerRunning = false;
+                if(timerInterval) clearInterval(timerInterval);
+            } else {
+                timerZone.classList.remove('hidden');
+                updateTimerUI();
+                isTimerRunning = true;
+                document.getElementById('btn-timer-toggle').innerText = "일시정지";
+                startTimerInterval();
+            }
 
             document.getElementById('quiz-modal').classList.remove('hidden');
 
@@ -365,10 +409,6 @@
                 totalTime: qData.time,
                 isPaused: false
             });
-
-            isTimerRunning = true;
-            document.getElementById('btn-timer-toggle').innerText = "일시정지";
-            startTimerInterval();
         };
 
         function startTimerInterval() {
@@ -397,6 +437,7 @@
         }
 
         window.toggleTimer = function() {
+            if (timeLeft <= 0) return; // 제한시간 없는 문제 예외처리
             isTimerRunning = !isTimerRunning;
             document.getElementById('btn-timer-toggle').innerText = isTimerRunning ? "일시정지" : "재개";
             
@@ -415,6 +456,7 @@
         };
 
         function updateTimerUI() {
+            if (totalTimerTime <= 0) return;
             const min = String(Math.floor(timeLeft / 60)).padStart(2, '0');
             const sec = String(timeLeft % 60).padStart(2, '0');
             document.getElementById('timer-text').innerText = `${min}:${sec}`;
