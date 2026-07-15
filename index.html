@@ -32,6 +32,7 @@
         .team-active-3 { background-color: #10b981 !important; color: white; }
         .team-active-4 { background-color: #f59e0b !important; color: white; }
         .team-active-5 { background-color: #8b5cf6 !important; color: white; }
+        .team-active-6 { background-color: #ec4899 !important; color: white; } /* 6조: 핑크/마젠타 추가 */
     </style>
 </head>
 <body class="p-6 overflow-x-hidden">
@@ -101,7 +102,7 @@
                         <button onclick="revealRealAnswer()" class="bg-orange-500 hover:bg-orange-600 text-slate-950 font-black text-xs px-3 py-1 rounded shadow transition">🎯 실제 정답 공개</button>
                     </div>
                 </h4>
-                <div id="live-answers-grid" class="grid grid-cols-5 gap-2"></div>
+                <div id="live-answers-grid" class="grid grid-cols-6 gap-2"></div> <!-- grid-cols-5에서 grid-cols-6으로 확장 -->
             </div>
 
             <!-- 실제 정답 노출 히든 영역 -->
@@ -111,14 +112,15 @@
             </div>
 
             <div class="border-t border-slate-700 pt-4 flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="flex flex-wrap gap-4 items-center" id="scoring-zone">
+                <div class="flex flex-wrap gap-3 items-center" id="scoring-zone">
                     <span class="text-sm text-slate-300 font-bold">정답 인정 처리:</span>
-                    <div class="flex gap-3">
+                    <div class="flex flex-wrap gap-2">
                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-700 px-2.5 py-1 rounded-md"><input type="checkbox" value="1" class="w-4 h-4 accent-red-500"> <span class="text-xs font-bold">1조</span></label>
                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-700 px-2.5 py-1 rounded-md"><input type="checkbox" value="2" class="w-4 h-4 accent-blue-500"> <span class="text-xs font-bold">2조</span></label>
                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-700 px-2.5 py-1 rounded-md"><input type="checkbox" value="3" class="w-4 h-4 accent-emerald-500"> <span class="text-xs font-bold">3조</span></label>
                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-700 px-2.5 py-1 rounded-md"><input type="checkbox" value="4" class="w-4 h-4 accent-amber-500"> <span class="text-xs font-bold">4조</span></label>
                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-700 px-2.5 py-1 rounded-md"><input type="checkbox" value="5" class="w-4 h-4 accent-purple-500"> <span class="text-xs font-bold">5조</span></label>
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-700 px-2.5 py-1 rounded-md"><input type="checkbox" value="6" class="w-4 h-4 accent-pink-500"> <span class="text-xs font-bold">6조</span></label> <!-- 6조 체크박스 추가 -->
                     </div>
                 </div>
                 <div class="flex gap-2 w-full md:w-auto justify-end">
@@ -246,8 +248,9 @@
             mainBoard.appendChild(btn);
         }
 
+        // 조별 실시간 상황 모니터 - 6개 조로 동적 생성
         const teamsMonitor = document.getElementById('teams-monitor');
-        for (let t = 1; t <= 5; t++) {
+        for (let t = 1; t <= 6; t++) {
             const teamDiv = document.createElement('div');
             teamDiv.className = "bg-slate-800 p-3 rounded-xl border border-slate-700 shadow-inner";
             teamDiv.innerHTML = `
@@ -269,7 +272,8 @@
             }
         }
 
-        for (let t = 1; t <= 5; t++) {
+        // 6개 조에 대한 실시간 Firebase 리스너 장착
+        for (let t = 1; t <= 6; t++) {
             onValue(ref(db, `teams/${t}`), (snapshot) => {
                 const teamData = snapshot.val() || {};
                 const board = teamData.bingoBoard || [];
@@ -312,10 +316,11 @@
             });
         }
 
+        // 특정 문제 풀이가 완료되었을 때 전체 그리드 fade-out 갱신
         onValue(ref(db, 'teams'), (snapshot) => {
             const allTeams = snapshot.val() || {};
             let resolvedMap = {};
-            for(let t=1; t<=5; t++) {
+            for(let t=1; t<=6; t++) {
                 const occ = (allTeams[t] ? allTeams[t].occupied_cells : {}) || {};
                 for(let k in occ) {
                     if(occ[k] === true) resolvedMap[k] = true;
@@ -331,6 +336,7 @@
             }
         });
 
+        // 빙고 계산 로직 (기존 버그 수정: c 루프 돌 때 r 인덱스 증가 에러 방지)
         window.calculateBingo = function(teamId, board, occupied) {
             let grid = [];
             for (let i = 0; i < 5; i++) grid.push(board.slice(i * 5, i * 5 + 5));
@@ -339,7 +345,7 @@
             for (let r = 0; r < 5; r++) {
                 if (grid[r].every(num => occupied[num])) bingoCount++;
             }
-            for (let c = 0; c < 5; r++) {
+            for (let c = 0; c < 5; c++) {
                 if ([0,1,2,3,4].every(r => occupied[grid[r][c]])) bingoCount++;
             }
             if ([0,1,2,3,4].every(i => occupied[grid[i][i]])) bingoCount++;
@@ -348,6 +354,7 @@
             document.getElementById(`team-bingo-count-${teamId}`).innerText = `${bingoCount} Bingo`;
         };
 
+        // 퀴즈 출제 모달 열기
         window.openQuizModal = function(qId) {
             currentActiveQId = qId;
             const qData = quizBank[qId];
@@ -364,9 +371,10 @@
             document.getElementById('modal-difficulty').innerText = `난이도: ${qData.diff}`;
             document.getElementById('modal-content').innerText = qData.q;
 
+            // 6개 조 실시간 정답 판넬 초기 생성
             const liveAnsGrid = document.getElementById('live-answers-grid');
             liveAnsGrid.innerHTML = '';
-            for(let t=1; t<=5; t++) {
+            for(let t=1; t<=6; t++) {
                 const block = document.createElement('div');
                 block.id = `live-ans-${t}`;
                 block.className = "bg-slate-900 border border-slate-700 p-3 rounded-xl text-center";
@@ -377,6 +385,7 @@
                 liveAnsGrid.appendChild(block);
             }
 
+            // 채점용 체크박스 초기화
             document.querySelectorAll('#scoring-zone input[type="checkbox"]').forEach(cb => cb.checked = false);
 
             const timerZone = document.getElementById('master-timer-zone');
@@ -384,7 +393,6 @@
             totalTimerTime = qData.time;
 
             if (timeLeft <= 0) {
-                // 시간 제한 없음 처리
                 timerZone.classList.add('hidden');
                 isTimerRunning = false;
                 if(timerInterval) clearInterval(timerInterval);
@@ -437,7 +445,7 @@
         }
 
         window.toggleTimer = function() {
-            if (timeLeft <= 0) return; // 제한시간 없는 문제 예외처리
+            if (timeLeft <= 0) return;
             isTimerRunning = !isTimerRunning;
             document.getElementById('btn-timer-toggle').innerText = isTimerRunning ? "일시정지" : "재개";
             
@@ -470,11 +478,12 @@
             else pBar.className = "bg-gradient-to-r from-emerald-400 to-blue-500 h-full transition-all duration-1000 ease-linear";
         }
 
+        // 조별 제출 정답 강제 노출
         window.revealAnswers = function() {
             update(ref(db, 'game'), { status: 'showing_answers' });
             get(ref(db, 'teams')).then((snapshot) => {
                 const teamsData = snapshot.val() || {};
-                for(let t=1; t<=5; t++) {
+                for(let t=1; t<=6; t++) {
                     const ansDisplay = document.getElementById(`live-ans-${t}`);
                     if(ansDisplay) {
                         const rawAns = (teamsData[t] && teamsData[t].answers) ? teamsData[t].answers[currentActiveQId] : "";
@@ -488,6 +497,7 @@
             });
         };
 
+        // DB에 기록된 실제 정답 공개
         window.revealRealAnswer = function() {
             if (currentActiveQId === 0) return;
             
@@ -514,6 +524,7 @@
             });
         };
 
+        // 체크 처리된 조들을 대상으로 정답(점유) 처리 진행
         window.submitScoring = function() {
             let updates = {};
             let checkCount = 0;
@@ -549,6 +560,7 @@
             });
         };
 
+        // 전체 리셋 로직 (6조까지 초기화 데이터 매핑 완료)
         window.resetGame = function() {
             if(confirm("정말로 모든 데이터를 초기화하시겠습니까?")) {
                 if(timerInterval) clearInterval(timerInterval);
@@ -571,7 +583,8 @@
                         2: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false} },
                         3: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false} },
                         4: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false} },
-                        5: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false} }
+                        5: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false} },
+                        6: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false} } // 6조 데이터 기본구조 추가
                     }
                 };
                 set(ref(db), initData).then(() => location.reload());
