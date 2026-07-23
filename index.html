@@ -32,7 +32,7 @@
         .team-active-3 { background-color: #10b981 !important; color: white; }
         .team-active-4 { background-color: #f59e0b !important; color: white; }
         .team-active-5 { background-color: #8b5cf6 !important; color: white; }
-        .team-active-6 { background-color: #ec4899 !important; color: white; } /* 6조: 핑크/마젠타 추가 */
+        .team-active-6 { background-color: #ec4899 !important; color: white; }
     </style>
 </head>
 <body class="p-6 overflow-x-hidden">
@@ -59,7 +59,7 @@
 
         <div class="flex flex-col gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
             <h2 class="text-lg font-bold text-emerald-400 border-b border-slate-700 pb-2 flex items-center gap-2">
-                <span>📊</span> 조별 실시간 빙고 상황
+                <span>📊</span> 조별 실시간 빙고 및 점수 상황
             </h2>
             <div id="teams-monitor" class="flex flex-col gap-6 overflow-y-auto max-h-[750px] pr-2"></div>
         </div>
@@ -83,7 +83,7 @@
                 <p id="modal-content" class="text-2xl md:text-3xl font-bold text-center text-slate-100 leading-relaxed break-keep">질문 내용 로딩 중...</p>
             </div>
 
-            <!-- 타이머 영역 (시간 제한 없는 문제는 자바스크립트로 hidden 처리됨) -->
+            <!-- 타이머 영역 -->
             <div id="master-timer-zone" class="mb-6 bg-slate-950 p-4 rounded-xl border border-slate-800">
                 <div class="flex justify-between items-center mb-2">
                     <button id="btn-timer-toggle" onclick="toggleTimer()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-3 py-1 rounded shadow transition">일시정지</button>
@@ -102,7 +102,7 @@
                         <button onclick="revealRealAnswer()" class="bg-orange-500 hover:bg-orange-600 text-slate-950 font-black text-xs px-3 py-1 rounded shadow transition">🎯 실제 정답 공개</button>
                     </div>
                 </h4>
-                <div id="live-answers-grid" class="grid grid-cols-6 gap-2"></div> <!-- grid-cols-5에서 grid-cols-6으로 확장 -->
+                <div id="live-answers-grid" class="grid grid-cols-6 gap-2"></div>
             </div>
 
             <!-- 실제 정답 노출 히든 영역 -->
@@ -120,7 +120,7 @@
                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-700 px-2.5 py-1 rounded-md"><input type="checkbox" value="3" class="w-4 h-4 accent-emerald-500"> <span class="text-xs font-bold">3조</span></label>
                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-700 px-2.5 py-1 rounded-md"><input type="checkbox" value="4" class="w-4 h-4 accent-amber-500"> <span class="text-xs font-bold">4조</span></label>
                         <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-700 px-2.5 py-1 rounded-md"><input type="checkbox" value="5" class="w-4 h-4 accent-purple-500"> <span class="text-xs font-bold">5조</span></label>
-                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-700 px-2.5 py-1 rounded-md"><input type="checkbox" value="6" class="w-4 h-4 accent-pink-500"> <span class="text-xs font-bold">6조</span></label> <!-- 6조 체크박스 추가 -->
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-slate-700 px-2.5 py-1 rounded-md"><input type="checkbox" value="6" class="w-4 h-4 accent-pink-500"> <span class="text-xs font-bold">6조</span></label>
                     </div>
                 </div>
                 <div class="flex gap-2 w-full md:w-auto justify-end">
@@ -159,16 +159,13 @@
         sfxWarning.volume = 0.6;
 
         const quizBank = {
-            // [성경 카테고리 - 총 15문제]
             1: { cat: "성경", diff: "상", time: 60, q: "Q. 영원 안에서 삼위 하나님 간에 맺으신 언약으로, 택자들의 구원에 관한 신성한 합의를 무슨 언약이라고 할까요?", ans: "구속언약" },
             2: { cat: "성경", diff: "상", time: 60, q: "Q. 성부는 구원을 계획하시고, 성자는 구원을 이루시고, 성령은 이 완성된 구원을 우리에게 ( )하신다. 빈칸은?", ans: "적용" },
             3: { cat: "성경", diff: "상", time: 60, q: "Q. 하나님의 속성 중 사랑과 공의를 동시에 100% 만족시키고 완벽히 증명한 역사적 사건은 무엇인가요?", ans: "십자가" },
-            
             4: { cat: "성경", diff: "중", time: 45, q: "Q. 성경은 하나님의 감동으로 기록된 책임과 동시에, 구원에 이르게 하는 지식을 담은 'XX계시'입니다. 빈칸은?", ans: "특별" },
-            5: { cat: "성경", diff: "중", time: 45, q: "Q. 진화론과 창조론은 과학적 실험의 영역이 아니라, 결국 무엇을 믿느냐에 달린 'OO'의 영역입니다. 빈칸은?", ans: "믿음" },
+            5: { cat: "성경", diff: "중", time: 45, q: "Q. 진화론และ 창조론은 과학적 실험의 영역이 아니라, 결국 무엇을 믿느냐에 달린 'OO'의 영역입니다. 빈칸은?", ans: "믿음" },
             6: { cat: "성경", diff: "중", time: 45, q: "Q. 성경이 말하는 죄의 본질은 왕이신 하나님의 법과 말씀에 ( )하는 행동과 상태를 뜻합니다. 빈칸은?", ans: "불순종" },
             7: { cat: "성경", diff: "중", time: 45, q: "Q. 세상과 섞이지 않고 구별되는 하나님의 속성이며, 성령님의 명칭 앞에도 붙는 단어인 이것은 무엇일까요?", ans: "거룩" },
-
             8: { cat: "성경", diff: "하", time: 30, q: "Q. 아담의 타락 이후 세상에 태어나는 모든 사람은 태어날 때부터 죄의 성향을 가지고 태어납니다. (O/X)", ans: "O" },
             9: { cat: "성경", diff: "하", time: 30, q: "Q. 성경이 말하는 죄의 결과로, 하나님과의 관계가 완전히 단절되어 영적으로 찾아온 비극적인 상태를 두 글자로 무엇이라고 할까요?", ans: "죽음" },
             10: { cat: "성경", diff: "하", time: 30, q: "Q. 우리를 죄와 죽음으로부터 해방시켜 주실 유일한 참 생명이며 우리의 구원자는 누구이신가요?", ans: "예수님" },
@@ -177,45 +174,11 @@
             13: { cat: "성경", diff: "하", time: 30, q: "Q. 예수님의 세 가지 핵심 직분은 왕, 제사장, 그리고 하나님의 진리를 선포하는 OOO입니다.", ans: "선지자" },
             14: { cat: "성경", diff: "하", time: 30, q: "Q. 우리 곁에서 늘 변호하시고 가르쳐 주시며 돕는 은혜를 베푸시는 성령님의 또 다른 명칭은 무엇일까요?", ans: "보혜사" },
             15: { cat: "성경", diff: "하", time: 30, q: "Q. 죄인이 실질적으로 의로워지는 게 아니라, 예수님 공로로 하나님께 의롭다고 선언받는 것을 뜻하는 단어는?", ans: "칭의" },
-
-            // [팀원 카테고리] - 100% 액티비티 미션 (시간 제한 없음: time = 0)
-            16: { 
-                cat: "팀원", 
-                diff: "중", 
-                time: 0, 
-                q: "Q. [조원 액티비티] 일심동체 포즈! 진행자가 부르는 단어(예: 아이돌, 기도 등)를 듣고, 조원 전체가 동시에 완전히 똑같은 포즈를 취해 통일시키세요!", 
-                ans: "미션성공" 
-            },
-            17: { 
-                cat: "팀원", 
-                diff: "상", 
-                time: 0, 
-                q: "Q. [조원 액티비티] 몸으로 만드는 십자가! 조원 전원이 몸을 연결하여 가장 멋진 '십자가'를 만들고, 그대로 '10초' 동안 흔들림 없이 유지하세요!", 
-                ans: "미션성공" 
-            },
-            18: { 
-                cat: "팀원", 
-                diff: "중", 
-                time: 0, 
-                q: "Q. [조원 액티비티] 침묵의 생일순 정렬! 지금부터 목소리 내기 금지! 오직 눈빛과 손짓으로만 소통하여 생일이 가장 빠른 사람부터 느린 사람 순으로 한 줄로 정렬하세요!", 
-                ans: "미션성공" 
-            },
-            19: { 
-                cat: "팀원", 
-                diff: "상", 
-                time: 0, 
-                q: "Q. [조원 액티비티] 몸으로 말해요! 조원 중 1명이 앞으로 나와 진행자가 보여주는 단어 3개를 오직 '몸짓'으로만 설명하고, 나머지 조원들이 모두 맞추세요! (목소리/입모양 절대 금지)", 
-                ans: "미션성공" 
-            },
-            20: { 
-                cat: "팀원", 
-                diff: "상", 
-                time: 0, 
-                q: "Q. [조원 액티비티] 풍선을 잡아라! 조원 한 명이 허공에 바람 빠진 풍선을 놓는 순간, 대기하던 다른 조원이 쏜살같이 달려가 땅에 닿기 전에 풍선을 공중에서 캐치하세요!", 
-                ans: "미션성공" 
-            },
-
-            // [상식 카테고리]
+            16: { cat: "팀원", diff: "중", time: 0, q: "Q. [조원 액티비티] 일심동체 포즈! 진행자가 부르는 단어(예: 아이돌, 기도 등)를 듣고, 조원 전체가 동시에 완전히 똑같은 포즈를 취해 통일시키세요!", ans: "미션성공" },
+            17: { cat: "팀원", diff: "상", time: 0, q: "Q. [조원 액티비티] 몸으로 만드는 십자가! 조원 전원이 몸을 연결하여 가장 멋진 '십자가'를 만들고, 그대로 '10초' 동안 흔들림 없이 유지하세요!", ans: "미션성공" },
+            18: { cat: "팀원", diff: "중", time: 0, q: "Q. [조원 액티비티] 침묵의 생일순 정렬! 지금부터 목소리 내기 금지! 오직 눈빛과 손짓으로만 소통하여 생일이 가장 빠른 사람부터 느린 사람 순으로 한 줄로 정렬하세요!", ans: "미션성공" },
+            19: { cat: "팀원", diff: "상", time: 0, q: "Q. [조원 액티비티] 몸으로 말해요! 조원 중 1명이 앞으로 나와 진행자가 보여주는 단어 3개를 오직 '몸짓'으로만 설명하고, 나머지 조원들이 모두 맞추세요! (목소리/입모양 절대 금지)", ans: "미션성공" },
+            20: { cat: "팀원", diff: "상", time: 0, q: "Q. [조원 액티비티] 풍선을 잡아라! 조원 한 명이 허공에 바람 빠진 풍선을 놓는 순간, 대기하던 다른 조원이 쏜살같이 달려가 땅에 닿기 전에 풍선을 공중에서 캐치하세요!", ans: "미션성공" },
             21: { cat: "상식", diff: "상", time: 60, q: "Q. 빈칸에 들어갈 숫자는 무엇일까요?\n1, 2, 3, 5, 8, 13, ( )", ans: "21" },
             22: { cat: "상식", diff: "상", time: 60, q: "Q. 농장에 닭과 토끼가 살고 있습니다. 머리 수는 총 10개이고, 다리 수는 총 32개일 때, 이 농장에 있는 '토끼'는 모두 몇 마리일까요?", ans: "6" },
             23: { cat: "상식", diff: "중", time: 45, q: "Q. 조선시대 세종대왕 시절 장영실 등이 강우량을 정밀하게 측정하기 위해 세계 최초로 발명한 기구는?", ans: "측우기" },
@@ -248,7 +211,6 @@
             mainBoard.appendChild(btn);
         }
 
-        // 조별 실시간 상황 모니터 - 6개 조로 동적 생성
         const teamsMonitor = document.getElementById('teams-monitor');
         for (let t = 1; t <= 6; t++) {
             const teamDiv = document.createElement('div');
@@ -256,7 +218,10 @@
             teamDiv.innerHTML = `
                 <div class="flex justify-between items-center mb-1.5">
                     <span class="font-black text-sm text-slate-200">${t}조 현황</span>
-                    <span id="team-bingo-count-${t}" class="text-xs bg-slate-900 px-2 py-0.5 rounded-full text-yellow-400 font-mono">0 Bingo</span>
+                    <div class="flex gap-1.5 items-center">
+                        <span id="team-score-${t}" class="text-xs bg-blue-900 px-2 py-0.5 rounded-full text-white font-bold">0점</span>
+                        <span id="team-bingo-count-${t}" class="text-xs bg-slate-900 px-2 py-0.5 rounded-full text-yellow-400 font-mono">0 Bingo</span>
+                    </div>
                 </div>
                 <div id="mini-grid-${t}" class="grid grid-cols-5 gap-1 aspect-square w-full max-w-[180px] mx-auto"></div>
             `;
@@ -272,7 +237,6 @@
             }
         }
 
-        // 6개 조에 대한 실시간 Firebase 리스너 장착
         for (let t = 1; t <= 6; t++) {
             onValue(ref(db, `teams/${t}`), (snapshot) => {
                 const teamData = snapshot.val() || {};
@@ -292,7 +256,7 @@
                             cell.className = "bg-slate-900 border border-slate-700/60 rounded flex items-center justify-center text-[10px] font-bold text-slate-400";
                         }
                     }
-                    calculateBingo(t, board, occupied);
+                    calculateBingoAndScore(t, board, occupied);
                 }
 
                 if (currentActiveQId > 0) {
@@ -316,7 +280,6 @@
             });
         }
 
-        // 특정 문제 풀이가 완료되었을 때 전체 그리드 fade-out 갱신
         onValue(ref(db, 'teams'), (snapshot) => {
             const allTeams = snapshot.val() || {};
             let resolvedMap = {};
@@ -336,12 +299,13 @@
             }
         });
 
-        // 빙고 계산 로직 (기존 버그 수정: c 루프 돌 때 r 인덱스 증가 에러 방지)
-        window.calculateBingo = function(teamId, board, occupied) {
+        // 실시간 점수 및 빙고 동시 연산 로직
+        window.calculateBingoAndScore = function(teamId, board, occupied) {
             let grid = [];
             for (let i = 0; i < 5; i++) grid.push(board.slice(i * 5, i * 5 + 5));
+            
+            // 1. 빙고 개수 산출
             let bingoCount = 0;
-
             for (let r = 0; r < 5; r++) {
                 if (grid[r].every(num => occupied[num])) bingoCount++;
             }
@@ -351,10 +315,31 @@
             if ([0,1,2,3,4].every(i => occupied[grid[i][i]])) bingoCount++;
             if ([0,1,2,3,4].every(i => occupied[grid[i][4 - i]])) bingoCount++;
 
+            // 2. 퀴즈 맞힌 점수 산출 (하:10, 중:30, 상:50)
+            let quizScore = 0;
+            for (let qId in occupied) {
+                if (occupied[qId] === true && quizBank[qId]) {
+                    const diff = quizBank[qId].diff;
+                    if (diff === "상") quizScore += 50;
+                    else if (diff === "중") quizScore += 30;
+                    else if (diff === "하") quizScore += 10;
+                }
+            }
+
+            // 3. 총합 산출 (빙고당 100점 추가)
+            let totalScore = quizScore + (bingoCount * 100);
+
+            // UI 업데이트
             document.getElementById(`team-bingo-count-${teamId}`).innerText = `${bingoCount} Bingo`;
+            document.getElementById(`team-score-${teamId}`).innerText = `${totalScore}점`;
+            
+            // 실시간 DB 반영 (학생용 패널 동기화 목적)
+            update(ref(db, `teams/${teamId}`), {
+                currentScore: totalScore,
+                currentBingo: bingoCount
+            });
         };
 
-        // 퀴즈 출제 모달 열기
         window.openQuizModal = function(qId) {
             currentActiveQId = qId;
             const qData = quizBank[qId];
@@ -368,10 +353,9 @@
 
             document.getElementById('modal-qnum').innerText = `QUESTION ${String(qId).padStart(2, '0')}`;
             document.getElementById('modal-category').innerText = qData.cat;
-            document.getElementById('modal-difficulty').innerText = `난이도: ${qData.diff}`;
+            document.getElementById('modal-difficulty').innerText = `난이도: ${qData.diff} (${qData.diff === '상' ? '50점' : qData.diff === '중' ? '30점' : '10점'})`;
             document.getElementById('modal-content').innerText = qData.q;
 
-            // 6개 조 실시간 정답 판넬 초기 생성
             const liveAnsGrid = document.getElementById('live-answers-grid');
             liveAnsGrid.innerHTML = '';
             for(let t=1; t<=6; t++) {
@@ -385,7 +369,6 @@
                 liveAnsGrid.appendChild(block);
             }
 
-            // 채점용 체크박스 초기화
             document.querySelectorAll('#scoring-zone input[type="checkbox"]').forEach(cb => cb.checked = false);
 
             const timerZone = document.getElementById('master-timer-zone');
@@ -478,7 +461,6 @@
             else pBar.className = "bg-gradient-to-r from-emerald-400 to-blue-500 h-full transition-all duration-1000 ease-linear";
         }
 
-        // 조별 제출 정답 강제 노출
         window.revealAnswers = function() {
             update(ref(db, 'game'), { status: 'showing_answers' });
             get(ref(db, 'teams')).then((snapshot) => {
@@ -497,7 +479,6 @@
             });
         };
 
-        // DB에 기록된 실제 정답 공개
         window.revealRealAnswer = function() {
             if (currentActiveQId === 0) return;
             
@@ -524,7 +505,6 @@
             });
         };
 
-        // 체크 처리된 조들을 대상으로 정답(점유) 처리 진행
         window.submitScoring = function() {
             let updates = {};
             let checkCount = 0;
@@ -560,7 +540,6 @@
             });
         };
 
-        // 전체 리셋 로직 (6조까지 초기화 데이터 매핑 완료)
         window.resetGame = function() {
             if(confirm("정말로 모든 데이터를 초기화하시겠습니까?")) {
                 if(timerInterval) clearInterval(timerInterval);
@@ -579,12 +558,12 @@
                         isPaused: false
                     },
                     teams: {
-                        1: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false} },
-                        2: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false} },
-                        3: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false} },
-                        4: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false} },
-                        5: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false} },
-                        6: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false} } // 6조 데이터 기본구조 추가
+                        1: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false}, currentScore: 0, currentBingo: 0 },
+                        2: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false}, currentScore: 0, currentBingo: 0 },
+                        3: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false}, currentScore: 0, currentBingo: 0 },
+                        4: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false}, currentScore: 0, currentBingo: 0 },
+                        5: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false}, currentScore: 0, currentBingo: 0 },
+                        6: { bingoBoard: [], answers: {0: ""}, occupied_cells: {0: false}, currentScore: 0, currentBingo: 0 }
                     }
                 };
                 set(ref(db), initData).then(() => location.reload());
