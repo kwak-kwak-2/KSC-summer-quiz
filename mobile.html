@@ -48,7 +48,7 @@
             <button onclick="selectTeam(3)" class="w-full py-3.5 bg-emerald-600/90 active:bg-emerald-700 text-lg font-black rounded-2xl shadow transition text-white">3조 대표 접속</button>
             <button onclick="selectTeam(4)" class="w-full py-3.5 bg-amber-600/90 active:bg-amber-700 text-lg font-black rounded-2xl shadow transition text-white">4조 대표 접속</button>
             <button onclick="selectTeam(5)" class="w-full py-3.5 bg-purple-600/90 active:bg-purple-700 text-lg font-black rounded-2xl shadow transition text-white">5조 대표 접속</button>
-            <button onclick="selectTeam(6)" class="w-full py-3.5 bg-pink-600/90 active:bg-pink-700 text-lg font-black rounded-2xl shadow transition text-white">6조 대표 접속</button> <!-- 6조 추가 -->
+            <button onclick="selectTeam(6)" class="w-full py-3.5 bg-pink-600/90 active:bg-pink-700 text-lg font-black rounded-2xl shadow transition text-white">6조 대표 접속</button>
         </div>
     </div>
 
@@ -78,7 +78,10 @@
     <div id="step-game-play" class="step-panel space-y-4">
         <div class="p-3 bg-slate-900 border border-slate-800 rounded-xl flex justify-between items-center text-xs">
             <span class="text-slate-400">상태: <span class="text-emerald-400 font-bold">실시간 동기화 완료</span></span>
-            <span id="play-bingo-count" class="bg-blue-600 text-white font-mono px-2 py-0.5 rounded-full font-bold">0 Bingo</span>
+            <div class="flex gap-2">
+                <span id="play-team-score" class="bg-blue-600 text-white font-sans px-2.5 py-0.5 rounded-full font-bold">0점</span>
+                <span id="play-bingo-count" class="bg-slate-800 border border-slate-700 text-yellow-400 font-mono px-2 py-0.5 rounded-full font-bold">0 Bingo</span>
+            </div>
         </div>
         <div class="grid grid-cols-5 gap-2 aspect-square w-full bg-slate-950 p-2 rounded-2xl border border-slate-800" id="play-grid"></div>
         <div class="text-center text-xs text-slate-500 py-2">선생님이 문제를 출제하면 정답 입력창이 자동으로 켜집니다.</div>
@@ -359,7 +362,13 @@
             onValue(ref(db, `teams/${myTeamId}`), (snapshot) => {
                 const teamData = snapshot.val() || {};
                 const occupied = teamData.occupied_cells || {};
+                const score = teamData.currentScore || 0;
+                const bingo = teamData.currentBingo || 0;
                 
+                // 마스터보드에서 가공하여 저장해준 점수와 빙고 카운트 UI 동기화
+                document.getElementById('play-team-score').innerText = `${score}점`;
+                document.getElementById('play-bingo-count').innerText = `${bingo} Bingo`;
+
                 let currentTrueCount = 0;
                 actualDBBingoArray.forEach(num => {
                     const cell = document.getElementById(`play-cell-${num}`);
@@ -376,8 +385,6 @@
                     sfxWinCell.play().catch(e => {});
                 }
                 previousOccupiedCount = currentTrueCount;
-
-                calculatePlayBingo(occupied);
             });
         }
 
@@ -425,17 +432,6 @@
             if(!isPaused) {
                 mobileTimerLoop = setInterval(runTick, 1000);
             }
-        }
-
-        function calculatePlayBingo(occupied) {
-            let grid = [];
-            for (let i = 0; i < 5; i++) grid.push(actualDBBingoArray.slice(i * 5, i * 5 + 5));
-            let bingo = 0;
-            for(let r=0; r<5; r++) { if(grid[r].every(num => occupied[num] === true)) bingo++; }
-            for(let c=0; c<5; c++) { if([0,1,2,3,4].every(r => occupied[grid[r][c]] === true)) bingo++; }
-            if([0,1,2,3,4].every(i => occupied[grid[i][i]] === true)) bingo++;
-            if([0,1,2,3,4].every(i => occupied[grid[i][4-i]] === true)) bingo++;
-            document.getElementById('play-bingo-count').innerText = `${bingo} Bingo`;
         }
 
         function openInputModal(qNum, status, questionText, category, difficulty, serverRealAnswer) {
